@@ -3,11 +3,13 @@ com\waterguard\dto\AuthDto$AuthResponse.class
 com\waterguard\model\Household$HouseholdBuilder.class
 com\waterguard\dto\BillingDto$BillingCalculationResult$BillingCalculationResultBuilder.class
 com\waterguard\model\Apartment.class
+com\waterguard\config\DataInitializer.class
 com\waterguard\model\Alert$AlertBuilder.class
 com\waterguard\dto\DashboardDto$AdminDashboardSummary$AdminDashboardSummaryBuilder.class
 com\waterguard\dto\MeterReadingDto$BulkUploadResult.class
 com\waterguard\dto\DashboardDto$DailyTrendPoint$DailyTrendPointBuilder.class
 com\waterguard\service\ApportionmentService.class
+com\waterguard\repository\InvoiceRepository.class
 com\waterguard\model\TariffPlan$TariffPlanBuilder.class
 com\waterguard\repository\AlertRepository.class
 com\waterguard\model\Alert.class
@@ -17,6 +19,7 @@ com\waterguard\dto\MeterReadingDto$CSVRowParsed.class
 com\waterguard\model\MeterReading$MeterReadingBuilder.class
 com\waterguard\service\AnomalyDetectionService$AnomalyResult.class
 com\waterguard\model\BulkWaterPurchase.class
+com\waterguard\service\BillingCycleService.class
 com\waterguard\service\TariffBillingEngine.class
 com\waterguard\dto\BillingDto$BillingCalculationResult.class
 com\waterguard\dto\MeterReadingDto$BulkUploadResult$BulkUploadResultBuilder.class
@@ -48,6 +51,7 @@ com\waterguard\model\BulkWaterPurchase$BulkWaterPurchaseBuilder.class
 com\waterguard\model\TariffTier$TariffTierBuilder.class
 com\waterguard\repository\TariffPlanRepository.class
 com\waterguard\controller\MeterReadingController.class
+com\waterguard\service\DashboardService.class
 com\waterguard\service\CustomUserDetailsService.class
 com\waterguard\WaterGuardApplication.class
 com\waterguard\dto\MeterReadingDto$CSVRowParsed$CSVRowParsedBuilder.class
@@ -56,6 +60,7 @@ com\waterguard\controller\AlertController.class
 com\waterguard\dto\BillingDto$TierBreakdownItem.class
 com\waterguard\dto\DashboardDto$AlertDto$AlertDtoBuilder.class
 com\waterguard\model\Household.class
+com\waterguard\controller\DashboardController.class
 com\waterguard\service\AuthService.class
 com\waterguard\service\MeterReadingService.class
 com\waterguard\dto\BillingDto$TierBreakdownItem$TierBreakdownItemBuilder.class
@@ -67,6 +72,7 @@ com\waterguard\model\Apartment$ApartmentBuilder.class
 com\waterguard\repository\MeterReadingRepository.class
 com\waterguard\dto\MeterReadingDto$ReadingResponse.class
 com\waterguard\controller\AuthController.class
+com\waterguard\controller\BillingController.class
 com\waterguard\dto\DashboardDto.class
 com\waterguard\model\BillingCycle.class
 com\waterguard\model\User.class
