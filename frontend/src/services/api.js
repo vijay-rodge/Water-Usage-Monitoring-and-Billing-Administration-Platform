@@ -2,14 +2,14 @@ const API_BASE = '/api';
 
 let mockState = {
   currentUser: {
-    userId: 2,
-    email: 'rahul.sharma@waterguard.io',
-    fullName: 'Rahul Sharma',
-    role: 'ROLE_RESIDENT',
+    userId: 1,
+    email: 'admin@waterguard.io',
+    fullName: 'Dr. Arvind Mehra (Society Secretary)',
+    role: 'ROLE_ADMIN',
     apartmentId: 1,
     apartmentName: 'Greenwoods Meadows Luxury Residency',
-    householdId: 1,
-    flatNo: 'A-101'
+    householdId: null,
+    flatNo: null
   },
   apartment: {
     id: 1,
@@ -199,6 +199,52 @@ let mockState = {
 };
 
 export const api = {
+  // 1. Community & Resident Registration (PostgreSQL Transaction)
+  register: async (regData) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(regData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data;
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Registration failed');
+    } catch (e) {
+      if (e.message && !e.message.includes('Failed to fetch') && !e.message.includes('fetch')) {
+        throw e;
+      }
+      // Fallback local registration response
+      const isCommunity = regData.apartmentName || regData.communityName || regData.role === 'ADMIN' || regData.role === 'ROLE_ADMIN';
+      const user = {
+        success: true,
+        pendingApproval: !isCommunity,
+        message: isCommunity 
+          ? 'Community and Administrator registered successfully' 
+          : 'Registration request submitted for approval by the community administrator.',
+        token: isCommunity ? `mock-jwt-reg-${Date.now()}` : null,
+        user: {
+          id: Date.now(),
+          email: regData.email || regData.adminEmail,
+          name: regData.fullName || regData.adminName,
+          role: isCommunity ? 'ADMIN' : 'RESIDENT',
+          approvalStatus: isCommunity ? 'APPROVED' : 'PENDING',
+          communityId: 1,
+          communityName: regData.communityName || regData.apartmentName || 'Greenwoods Meadows Luxury Residency',
+          householdId: isCommunity ? null : 1,
+          flatNo: regData.flatNo || 'A-101'
+        }
+      };
+      if (isCommunity) mockState.currentUser = user.user;
+      return user;
+    }
+  },
+
+  // 2. User Login (BCrypt verification & HttpOnly Cookie Set)
   login: async (emailOrObj, maybePassword) => {
     let email = emailOrObj;
     let password = maybePassword;
@@ -210,43 +256,123 @@ export const api = {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.token) localStorage.setItem('wg_token', data.token);
         return data;
       }
-    } catch (e) {}
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Invalid email or password');
+    } catch (e) {
+      if (e.message && !e.message.includes('Failed to fetch') && !e.message.includes('fetch')) {
+        throw e;
+      }
 
-    if (email === 'admin@waterguard.io') {
-      const user = {
-        token: 'mock-jwt-admin-token-xyz',
-        userId: 1,
-        email: 'admin@waterguard.io',
-        fullName: 'Dr. Arvind Mehra (Society Secretary)',
-        role: 'ROLE_ADMIN',
-        apartmentId: 1,
-        apartmentName: 'Greenwoods Meadows Luxury Residency',
-        householdId: null,
-        flatNo: null
-      };
-      mockState.currentUser = user;
-      return user;
-    } else {
-      const user = {
-        token: 'mock-jwt-resident-token-abc',
-        userId: 2,
-        email: email || 'rahul.sharma@waterguard.io',
-        fullName: 'Rahul Sharma',
-        role: 'ROLE_RESIDENT',
-        apartmentId: 1,
-        apartmentName: 'Greenwoods Meadows Luxury Residency',
-        householdId: 1,
-        flatNo: 'A-101'
-      };
-      mockState.currentUser = user;
-      return user;
+      if (email === 'admin@waterguard.io') {
+        const user = {
+          success: true,
+          token: 'mock-jwt-admin-token-xyz',
+          user: {
+            id: 1,
+            email: 'admin@waterguard.io',
+            name: 'Dr. Arvind Mehra (Society Secretary)',
+            role: 'ADMIN',
+            communityId: 1,
+            communityName: 'Greenwoods Meadows Luxury Residency',
+            householdId: null,
+            flatNo: null
+          }
+        };
+        mockState.currentUser = user.user;
+        return user;
+      } else {
+        const user = {
+          success: true,
+          token: 'mock-jwt-resident-token-abc',
+          user: {
+            id: 2,
+            email: email || 'resident3@gmail.com',
+            name: 'Rahul Sharma',
+            role: 'RESIDENT',
+            communityId: 1,
+            communityName: 'Greenwoods Meadows Luxury Residency',
+            householdId: 1,
+            flatNo: 'A-101'
+          }
+        };
+        mockState.currentUser = user.user;
+        return user;
+      }
+    }
+  },
+
+  // 3. Current Authenticated User (from HttpOnly Cookie)
+  getMe: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  // 4. Logout (Clears HttpOnly Cookie)
+  logout: async () => {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (e) {}
+    return { success: true };
+  },
+
+  // 5. Admin Resident Approval Workflow
+  getPendingResidents: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/pending-residents`, {
+        credentials: 'include'
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return [];
+  },
+
+  approveResident: async (residentId) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/approve-resident/${residentId}`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to approve resident');
+    } catch (e) {
+      if (e.message && !e.message.includes('fetch')) throw e;
+      return { success: true, message: 'Resident approved' };
+    }
+  },
+
+  rejectResident: async (residentId, reason = 'Declined by Administrator') => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/reject-resident/${residentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reason })
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to decline resident');
+    } catch (e) {
+      if (e.message && !e.message.includes('fetch')) throw e;
+      return { success: true, message: 'Resident request declined' };
     }
   },
 
@@ -254,9 +380,8 @@ export const api = {
 
   getResidentDashboard: async (householdId = 1) => {
     try {
-      const token = localStorage.getItem('wg_token');
       const res = await fetch(`${API_BASE}/dashboard/resident/${householdId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) return await res.json();
     } catch (e) {}
@@ -265,9 +390,8 @@ export const api = {
 
   getAdminDashboard: async (apartmentId = 1) => {
     try {
-      const token = localStorage.getItem('wg_token');
       const res = await fetch(`${API_BASE}/dashboard/admin/${apartmentId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) return await res.json();
     } catch (e) {}
@@ -372,4 +496,3 @@ export const api = {
     return { success: true };
   }
 };
-

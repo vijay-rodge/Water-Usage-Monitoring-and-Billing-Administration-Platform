@@ -1,75 +1,138 @@
 import React, { useState } from 'react';
-import { Droplets, AlertTriangle, CheckCircle2, Wrench, ArrowRight } from 'lucide-react';
+import { Droplets, AlertTriangle, CheckCircle2, Search, Filter, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export const LeakageRadarView = () => {
-  const [alerts, setAlerts] = useState([
-    { id: 1, flat: 'A-101', resident: 'Rahul Sharma', date: '2026-08-25', type: 'CONTINUOUS_LEAK', severity: 'CRITICAL', flowLiters: 1120, baselineLiters: 430, status: 'RESOLVED', details: 'Continuous flow between 2:00 AM - 5:30 AM. Plumber replaced toilet flush valve.' },
-    { id: 2, flat: 'C-402', resident: 'Meera Deshmukh', date: '2026-08-28', type: 'USAGE_SPIKE', severity: 'HIGH', flowLiters: 2300, baselineLiters: 900, status: 'OPEN', details: 'Sudden 2.5x spike during afternoon hours. Maintenance inspection scheduled.' },
+  const { showToast } = useAuth();
+
+  const [leaks, setLeaks] = useState([
+    { id: 1, flatNo: 'A-101', resident: 'Rahul Sharma', leakType: 'Night Trickle Leak (2am-5am)', excessLiters: '2,070 L', estimatedLoss: '₹144.90', severity: 'CRITICAL', detectedOn: '2026-08-25 04:15', status: 'RESOLVED', notes: 'Replaced toilet flush cistern valve' },
+    { id: 2, flatNo: 'C-402', resident: 'Meera Deshmukh', leakType: 'Sudden Flow Spike (>2.5x)', excessLiters: '4,600 L', estimatedLoss: '₹345.00', severity: 'HIGH', detectedOn: '2026-08-27 19:30', status: 'INVESTIGATING', notes: 'Terrace garden drip irrigation pipeline joint loose' },
+    { id: 3, flatNo: 'B-101', resident: 'Deepak Verma', leakType: 'Baseline Micro-Leakage', excessLiters: '850 L', estimatedLoss: '₹59.50', severity: 'MEDIUM', detectedOn: '2026-08-28 02:00', status: 'PENDING', notes: 'Master bathroom continuous sink tap drip' },
   ]);
 
-  const handleResolve = (id) => {
-    setAlerts(alerts.map(a => a.id === id ? { ...a, status: 'RESOLVED' } : a));
+  const handleResolve = (id, flatNo) => {
+    setLeaks(leaks.map(l => l.id === id ? { ...l, status: 'RESOLVED', notes: 'Fixed by society maintenance technician' } : l));
+    showToast(`Leak on Flat ${flatNo} marked as Repaired & Resolved!`, 'success');
+  };
+
+  const handleScanNow = () => {
+    showToast('Radar scanning 48 sub-meters for night flow baseline anomalies...', 'info');
+    setTimeout(() => {
+      showToast('Scan complete: 1 active leak investigated, 0 new leaks found.', 'success');
+    }, 1000);
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
-          Water Leakage & Anomaly Radar
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Automated algorithmic detection of continuous night flows, pipe ruptures, and abnormal spikes.
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+            Water Leakage & Anomaly Radar
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Real-time heuristic & ML baseline scanning for continuous night flows, pipe bursts, and fixture drips.
+          </p>
+        </div>
+
+        <button
+          onClick={handleScanNow}
+          className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
+        >
+          <Droplets className="w-4 h-4" />
+          <span>Trigger Radar Scan</span>
+        </button>
       </div>
 
-      <div className="space-y-4">
-        {alerts.map((a) => (
-          <div
-            key={a.id}
-            className={`bg-white border rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-              a.status === 'RESOLVED' ? 'border-slate-200' : 'border-red-200 bg-red-50/20'
-            }`}
-          >
-            <div className="flex items-start space-x-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold shrink-0 ${
-                a.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-100 text-red-600 animate-pulse'
-              }`}>
-                {a.status === 'RESOLVED' ? <CheckCircle2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
-              </div>
-
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h3 className="font-bold text-base text-slate-900">Flat {a.flat} — {a.resident}</h3>
-                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                    a.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {a.status}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 mt-1">{a.details}</p>
-                <div className="flex items-center space-x-3 text-xs font-mono text-slate-400 mt-2">
-                  <span>Detected Flow: <strong className="text-red-600">{a.flowLiters} L/day</strong></span>
-                  <span>•</span>
-                  <span>Normal Baseline: {a.baselineLiters} L/day</span>
-                  <span>•</span>
-                  <span>Flagged On: {a.date}</span>
-                </div>
-              </div>
-            </div>
-
-            {a.status !== 'RESOLVED' && (
-              <button
-                onClick={() => handleResolve(a.id)}
-                className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm transition shrink-0"
-              >
-                <Wrench className="w-4 h-4" />
-                <span>Mark Repaired & Resolved</span>
-              </button>
-            )}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="text-xs text-slate-400 font-medium">Active Anomalies</div>
+          <div className="text-2xl font-extrabold text-amber-500 font-mono mt-1">
+            {leaks.filter(l => l.status !== 'RESOLVED').length}
           </div>
-        ))}
+          <div className="text-[11px] text-slate-400 mt-0.5">Requiring plumbing attention</div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="text-xs text-slate-400 font-medium">Estimated Water Wastage</div>
+          <div className="text-2xl font-extrabold text-blue-600 font-mono mt-1">7,520 L</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Across society this month</div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="text-xs text-slate-400 font-medium">Resolution Rate</div>
+          <div className="text-2xl font-extrabold text-emerald-600 font-mono mt-1">88.5%</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Average repair turnaround: 4.2 hrs</div>
+        </div>
+      </div>
+
+      {/* Leaks Feed */}
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4">
+        <h3 className="font-bold text-sm text-slate-800">Flagged Leak Incidents</h3>
+
+        <div className="space-y-3">
+          {leaks.map((leak) => {
+            const isResolved = leak.status === 'RESOLVED';
+            const isCritical = leak.severity === 'CRITICAL';
+
+            return (
+              <div
+                key={leak.id}
+                className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                  isResolved
+                    ? 'bg-slate-50 border-slate-200 text-slate-500'
+                    : isCritical
+                    ? 'bg-red-50/60 border-red-200'
+                    : 'bg-amber-50/60 border-amber-200'
+                }`}
+              >
+                <div className="flex items-start space-x-3.5">
+                  <div className="mt-0.5 shrink-0">
+                    {isResolved ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    ) : isCritical ? (
+                      <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-slate-900 text-sm">Flat {leak.flatNo}</span>
+                      <span className="text-xs text-slate-500">({leak.resident})</span>
+                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${
+                        isResolved
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : isCritical
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {leak.status}
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-800 mt-1">{leak.leakType}</div>
+                    <p className="text-xs text-slate-500 mt-0.5">{leak.notes}</p>
+                    <div className="text-[11px] text-slate-400 font-mono mt-1">
+                      Detected: {leak.detectedOn} • Excess: {leak.excessLiters} ({leak.estimatedLoss})
+                    </div>
+                  </div>
+                </div>
+
+                {!isResolved && (
+                  <button
+                    onClick={() => handleResolve(leak.id, leak.flatNo)}
+                    className="self-end sm:self-auto px-4 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold text-xs shadow-xs transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Mark Repaired & Resolved</span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 };
-

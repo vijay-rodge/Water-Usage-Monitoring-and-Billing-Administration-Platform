@@ -206,31 +206,35 @@ export const ResidentDashboardView = () => {
         </div>
 
         <div className="border border-slate-100 rounded-2xl overflow-hidden text-xs">
-          <div className="bg-slate-50 px-4 py-3 font-bold text-slate-500 grid grid-cols-12">
-            <div className="col-span-3">Invoice #</div>
-            <div className="col-span-3">Billing Cycle</div>
-            <div className="col-span-2 text-right">Volume (L)</div>
-            <div className="col-span-2 text-right">Amount (₹)</div>
-            <div className="col-span-2 text-right">Action</div>
-          </div>
-
-          <div className="divide-y divide-slate-100 text-slate-700">
-            {data.invoicesHistory?.map((inv) => (
-              <div key={inv.id} className="px-4 py-3 grid grid-cols-12 items-center hover:bg-slate-50/80 transition">
-                <div className="col-span-3 font-mono font-bold text-blue-600">{inv.invoiceNumber}</div>
-                <div className="col-span-3 text-slate-600">{inv.cycleName}</div>
-                <div className="col-span-2 text-right font-mono">{inv.totalConsumptionLiters.toLocaleString()} L</div>
-                <div className="col-span-2 text-right font-mono font-bold text-slate-900">₹{inv.totalAmountDue.toFixed(2)}</div>
-                <div className="col-span-2 text-right">
-                  <button
-                    onClick={() => setSelectedInvoice(inv)}
-                    className="px-3 py-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 rounded-lg font-semibold transition text-xs"
-                  >
-                    View Bill
-                  </button>
-                </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[560px]">
+              <div className="bg-slate-50 px-4 py-3 font-bold text-slate-500 grid grid-cols-12">
+                <div className="col-span-3">Invoice #</div>
+                <div className="col-span-3">Billing Cycle</div>
+                <div className="col-span-2 text-right">Volume (L)</div>
+                <div className="col-span-2 text-right">Amount (₹)</div>
+                <div className="col-span-2 text-right">Action</div>
               </div>
-            ))}
+
+              <div className="divide-y divide-slate-100 text-slate-700">
+                {data.invoicesHistory?.map((inv) => (
+                  <div key={inv.id} className="px-4 py-3 grid grid-cols-12 items-center hover:bg-slate-50/80 transition">
+                    <div className="col-span-3 font-mono font-bold text-blue-600">{inv.invoiceNumber}</div>
+                    <div className="col-span-3 text-slate-600">{inv.cycleName}</div>
+                    <div className="col-span-2 text-right font-mono">{inv.totalConsumptionLiters.toLocaleString()} L</div>
+                    <div className="col-span-2 text-right font-mono font-bold text-slate-900">₹{inv.totalAmountDue.toFixed(2)}</div>
+                    <div className="col-span-2 text-right">
+                      <button
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="px-3 py-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 rounded-lg font-semibold transition text-xs cursor-pointer"
+                      >
+                        View Bill
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

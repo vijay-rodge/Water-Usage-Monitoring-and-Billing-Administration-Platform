@@ -8,10 +8,14 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-cyan-500 flex items-center justify-center">
-                <Droplets className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 flex items-center justify-center p-1.5 text-white">
+                <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <path d="M18 4C18 4 9 15 9 21.5C9 26.5 13 30.5 18 30.5C23 30.5 27 26.5 27 21.5C27 15 18 4 18 4Z" fill="#FFFFFF" fillOpacity="0.3"/>
+                  <path d="M18 7C18 7 11 16 11 21.5C11 25.4 14.1 28.5 18 28.5C21.9 28.5 25 25.4 25 21.5C25 16 18 7 18 7Z" fill="#FFFFFF"/>
+                  <path d="M14 20.5C15.2 19.3 16.5 19 18 20.5C19.5 22 20.8 21.7 22 20.5" stroke="#0284C7" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </div>
-              <span className="font-bold text-white tracking-tight">WaterGuard</span>
+              <span className="font-extrabold text-white tracking-tight">Aqua<span className="text-cyan-400">Flow</span></span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Development of a Smart Water Usage Monitoring and Automated Tiered Billing Management Platform for modern apartment communities.
@@ -50,7 +54,7 @@ export const Footer = () => {
         </div>
 
         <div className="pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© 2026 WaterGuard Platform. All rights reserved.</p>
+          <p>© 2026 AquaFlow Platform. All rights reserved.</p>
           <div className="flex items-center space-x-4 mt-2 sm:mt-0">
             <span className="flex items-center space-x-1">
               <Shield className="w-3.5 h-3.5 text-emerald-400" />

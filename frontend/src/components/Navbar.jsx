@@ -14,12 +14,19 @@ export const Navbar = ({ onOpenCalculator }) => {
             onClick={() => setActiveTab('home')}
             className="flex items-center space-x-3 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              <Droplets className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 via-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform p-2 text-white">
+              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <path d="M18 4C18 4 9 15 9 21.5C9 26.5 13 30.5 18 30.5C23 30.5 27 26.5 27 21.5C27 15 18 4 18 4Z" fill="#E0F2FE" fillOpacity="0.35"/>
+                <path d="M18 7C18 7 11 16 11 21.5C11 25.4 14.1 28.5 18 28.5C21.9 28.5 25 25.4 25 21.5C25 16 18 7 18 7Z" fill="#FFFFFF"/>
+                <path d="M14 20.5C15.2 19.3 16.5 19 18 20.5C19.5 22 20.8 21.7 22 20.5" stroke="#0284C7" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M15 24C16 23.2 17 23 18 24C19 25 20 24.8 21 24" stroke="#0284C7" strokeWidth="1.6" strokeLinecap="round" opacity="0.8"/>
+              </svg>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight text-white">WaterGuard</span>
+                <span className="font-extrabold text-lg tracking-tight text-white">
+                  Aqua<span className="text-cyan-400">Flow</span>
+                </span>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded">Smart IoT</span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">Smart Monitoring & Tiered Billing</p>

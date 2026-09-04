@@ -1,73 +1,60 @@
 import React, { useState } from 'react';
-import { Headphones, Plus, Send, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Headphones, Plus, Send, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export const SupportConcernsView = () => {
-  const [showForm, setShowForm] = useState(false);
-  const [tickets, setTickets] = useState([
-    { id: 1, category: 'Plumbing Leak', subject: 'Toilet flush valve continuous trickle', date: '2026-08-25', status: 'RESOLVED', response: 'Maintenance technician replaced flush seal. Leak fixed.' },
-    { id: 2, category: 'Billing Query', subject: 'Inquiry regarding Tier 2 rate calculation', date: '2026-08-15', status: 'RESOLVED', response: 'Clarification provided: Tier 2 applies to volume exceeding 10,000 L.' },
-  ]);
-
-  const [category, setCategory] = useState('Plumbing / Leak Inspection');
+  const { showToast } = useAuth();
+  const [category, setCategory] = useState('PLUMBING_LEAK');
   const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const [tickets, setTickets] = useState([
+    { id: 'TKT-1082', category: 'PLUMBING_LEAK', subject: 'Flush Cistern Continuous Drip', message: 'The toilet flush valve is trickling at night causing night usage alerts. Need technician visit.', date: '2026-08-25', status: 'RESOLVED', update: 'Maintenance technician Manoj replaced the cistern valve on Aug 25 11:30 AM.' },
+    { id: 'TKT-1070', category: 'BILLING_QUERY', subject: 'Previous July Invoice Receipt Copy', message: 'Need signed receipt copy for tax filing.', date: '2026-08-09', status: 'RESOLVED', update: 'Receipt PDF generated and emailed to resident3@gmail.com.' },
+  ]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!subject) return;
+    if (!subject || !message) return;
 
-    setTickets([
-      {
-        id: Date.now(),
-        category,
-        subject,
-        date: new Date().toISOString().split('T')[0],
-        status: 'OPEN',
-        response: 'Under review by society maintenance staff.'
-      },
-      ...tickets
-    ]);
+    const newTicket = {
+      id: `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
+      category,
+      subject,
+      message,
+      date: new Date().toISOString().split('T')[0],
+      status: 'OPEN',
+      update: 'Ticket logged with RWA Helpdesk. Technician will be assigned within 2 hours.'
+    };
 
+    setTickets([newTicket, ...tickets]);
     setSubject('');
-    setDescription('');
-    setShowForm(false);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3500);
+    setMessage('');
+    showToast(`Support ticket ${newTicket.id} submitted successfully!`, 'success');
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
-            Support & Maintenance Concerns
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Report plumbing leak emergencies, request sub-meter recalibration, or contact society maintenance.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Raise Support Ticket</span>
-        </button>
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+          Support & Resident Concerns
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          Raise plumbing repair requests, meter accuracy checks, and billing queries directly with RWA management.
+        </p>
       </div>
 
-      {submitted && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 flex items-center space-x-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span>Your support ticket has been submitted to the society estate management team!</span>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Raise Ticket Form */}
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Headphones className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-slate-800">Raise New Ticket</h3>
+          </div>
 
-      {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4 text-xs">
-          <h3 className="font-bold text-sm text-slate-800">New Request / Plumbing Ticket</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Issue Category</label>
               <select
@@ -75,75 +62,94 @@ export const SupportConcernsView = () => {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
               >
-                <option>Plumbing / Leak Inspection</option>
-                <option>Smart Sub-Meter Telemetry Error</option>
-                <option>Billing Statement Dispute</option>
-                <option>Water Quality / Tanker Inquiry</option>
+                <option value="PLUMBING_LEAK">Plumbing / Fixture Leak</option>
+                <option value="METER_HARDWARE">Sub-Meter Hardware Issue</option>
+                <option value="BILLING_QUERY">Billing & Tariff Query</option>
+                <option value="WATER_QUALITY">Water Quality Concern</option>
+                <option value="OTHER">General RWA Request</option>
               </select>
             </div>
+
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Subject</label>
+              <label className="block font-semibold text-slate-700 mb-1">Subject *</label>
               <input
                 type="text"
+                placeholder="e.g. Master bathroom tap dripping"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Master bathroom tap dripping constantly"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
                 required
               />
             </div>
-          </div>
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Detailed Description</label>
-            <textarea
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe when the issue started and preferred visit time..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-semibold"
-            >
-              Cancel
-            </button>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Detailed Description *</label>
+              <textarea
+                rows={4}
+                placeholder="Describe the issue, location, or anomaly..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                required
+              />
+            </div>
+
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-blue-600 text-white font-bold shadow-xs"
+              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
             >
-              Submit Ticket
+              <Send className="w-4 h-4" />
+              <span>Submit Ticket</span>
             </button>
-          </div>
-        </form>
-      )}
+          </form>
+        </div>
 
-      <div className="space-y-3">
-        {tickets.map((t) => (
-          <div key={t.id} className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="font-mono text-blue-600 font-bold text-xs">TCK-00{t.id}</span>
-                <h4 className="font-bold text-sm text-slate-900">{t.subject}</h4>
-              </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                t.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
-              }`}>
-                {t.status}
-              </span>
-            </div>
-            <p className="text-xs text-slate-600">{t.response}</p>
-            <div className="text-[11px] text-slate-400 font-mono pt-2 border-t border-slate-100 flex justify-between">
-              <span>Category: {t.category}</span>
-              <span>Logged: {t.date}</span>
-            </div>
+        {/* Tickets History List */}
+        <div className="lg:col-span-2 space-y-4">
+          <h3 className="font-bold text-sm text-slate-800">My Raised Tickets</h3>
+
+          <div className="space-y-3">
+            {tickets.map((t) => {
+              const isResolved = t.status === 'RESOLVED';
+
+              return (
+                <div
+                  key={t.id}
+                  className={`bg-white border rounded-3xl p-6 shadow-xs space-y-3 ${
+                    isResolved ? 'border-slate-200/80' : 'border-blue-200 bg-blue-50/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono font-bold text-xs text-blue-600">{t.id}</span>
+                      <h4 className="font-bold text-sm text-slate-900">{t.subject}</h4>
+                    </div>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${
+                      isResolved
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {t.status}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-600">{t.message}</p>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-1">
+                    <div className="text-[11px] font-bold text-slate-500">RWA Helpdesk Response:</div>
+                    <div className="text-slate-700">{t.update}</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                    <span>Category: {t.category.replace('_', ' ')}</span>
+                    <span>Date: {t.date}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
 };
-

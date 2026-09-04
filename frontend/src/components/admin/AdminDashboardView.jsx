@@ -188,14 +188,16 @@ export const AdminDashboardView = () => {
         </div>
 
         <div className="border border-slate-100 rounded-2xl overflow-hidden text-xs">
-          <div className="bg-slate-50 px-4 py-3 font-bold text-slate-500 grid grid-cols-12">
-            <div className="col-span-2">Flat / Wing</div>
-            <div className="col-span-3">Primary Resident</div>
-            <div className="col-span-2">Typology & Area</div>
-            <div className="col-span-2 text-right">Consumption (L)</div>
-            <div className="col-span-2 text-right">Est. Bill (₹)</div>
-            <div className="col-span-1 text-center">Status</div>
-          </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
+              <div className="bg-slate-50 px-4 py-3 font-bold text-slate-500 grid grid-cols-12">
+                <div className="col-span-2">Flat / Wing</div>
+                <div className="col-span-3">Primary Resident</div>
+                <div className="col-span-2">Typology & Area</div>
+                <div className="col-span-2 text-right">Consumption (L)</div>
+                <div className="col-span-2 text-right">Est. Bill (₹)</div>
+                <div className="col-span-1 text-center">Status</div>
+              </div>
 
           <div className="divide-y divide-slate-100">
             {data.topConsumingHouseholds?.map((h) => (
@@ -225,6 +227,8 @@ export const AdminDashboardView = () => {
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
       <CSVUploadModal
         isOpen={showCsvModal}

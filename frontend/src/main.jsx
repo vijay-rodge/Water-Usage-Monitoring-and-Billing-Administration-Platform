@@ -44,7 +44,7 @@ class ErrorBoundary extends React.Component {
           }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>💧</div>
             <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0', color: '#0f172a' }}>
-              WaterGuard Platform Loading
+              AquaFlow Platform Loading
             </h2>
             <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px 0' }}>
               {this.state.error?.message || 'An unexpected rendering issue occurred.'}

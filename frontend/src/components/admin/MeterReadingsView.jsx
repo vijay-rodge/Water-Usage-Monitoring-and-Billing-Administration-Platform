@@ -1,22 +1,35 @@
 import React, { useState } from 'react';
-import { Gauge, UploadCloud, Plus, AlertTriangle, CheckCircle2, Calendar, Search } from 'lucide-react';
+import { Gauge, UploadCloud, Plus, AlertTriangle, CheckCircle2, Download, Search } from 'lucide-react';
 import { CSVUploadModal } from '../CSVUploadModal';
 import { ManualReadingModal } from '../ManualReadingModal';
+import { useAuth } from '../../context/AuthContext';
 
 export const MeterReadingsView = () => {
-  const [showCsv, setShowCsv] = useState(false);
-  const [showManual, setShowManual] = useState(false);
+  const { showToast } = useAuth();
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const readings = [
-    { id: 1, flat: 'A-101', date: '2026-08-28', prev: 137100, curr: 137510, daily: 410, source: 'IoT Sub-Meter', isAnomaly: false },
-    { id: 2, flat: 'A-102', date: '2026-08-28', prev: 98200, curr: 98620, daily: 420, source: 'IoT Sub-Meter', isAnomaly: false },
-    { id: 3, flat: 'B-101', date: '2026-08-28', prev: 85400, curr: 85850, daily: 450, source: 'Manual Entry', isAnomaly: false },
-    { id: 4, flat: 'B-202', date: '2026-08-28', prev: 157290, curr: 157770, daily: 480, source: 'IoT Sub-Meter', isAnomaly: false },
-    { id: 5, flat: 'C-402', date: '2026-08-28', prev: 320100, curr: 322400, daily: 2300, source: 'CSV Upload', isAnomaly: true, reason: 'Continuous draw >2.5x baseline' },
-    { id: 6, flat: 'A-101', date: '2026-08-27', prev: 136690, curr: 137100, daily: 410, source: 'IoT Sub-Meter', isAnomaly: false },
-    { id: 7, flat: 'A-101', date: '2026-08-26', prev: 136200, curr: 136690, daily: 490, source: 'IoT Sub-Meter', isAnomaly: false },
-    { id: 8, flat: 'A-101', date: '2026-08-25', prev: 135080, curr: 136200, daily: 1120, source: 'IoT Sub-Meter', isAnomaly: true, reason: 'Flush valve continuous trickle' },
-  ];
+  const [readings, setReadings] = useState([
+    { id: 1, flatNo: 'A-101', meterSerial: 'WM-SN-A101-2024', readingDate: '2026-08-28', previousReading: 137510, currentReading: 137940, consumption: 430, isAnomaly: false, source: 'IOT_AUTOMATED' },
+    { id: 2, flatNo: 'A-102', meterSerial: 'WM-SN-A102-2024', readingDate: '2026-08-28', previousReading: 98200, currentReading: 98620, consumption: 420, isAnomaly: false, source: 'IOT_AUTOMATED' },
+    { id: 3, flatNo: 'B-101', meterSerial: 'WM-SN-B101-2024', readingDate: '2026-08-28', previousReading: 85400, currentReading: 85850, consumption: 450, isAnomaly: false, source: 'MANUAL_ENTRY' },
+    { id: 4, flatNo: 'B-202', meterSerial: 'WM-SN-B202-2024', readingDate: '2026-08-28', previousReading: 157290, currentReading: 157770, consumption: 480, isAnomaly: false, source: 'IOT_AUTOMATED' },
+    { id: 5, flatNo: 'C-402', meterSerial: 'WM-SN-C402-2024', readingDate: '2026-08-28', previousReading: 320100, currentReading: 322400, consumption: 2300, isAnomaly: true, anomalyReason: 'Spike >2.5x normal baseline', source: 'CSV_BATCH' },
+  ]);
+
+  const handleManualSaved = () => {
+    showToast('Manual dial reading recorded and synced to database!', 'success');
+  };
+
+  const handleCsvUploaded = (res) => {
+    showToast(`CSV Batch processed! ${res.successCount} readings updated, ${res.anomaliesDetected} anomaly flagged.`, 'success');
+  };
+
+  const filtered = readings.filter(r => 
+    r.flatNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.meterSerial.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -26,21 +39,22 @@ export const MeterReadingsView = () => {
             Sub-Meter Telemetry & Ingestion
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Real-time IoT water telemetry and daily society meter batch reading uploads.
+            Real-time digital IoT dial logs, manual entry backups, and bulk CSV batch ingestion.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           <button
-            onClick={() => setShowManual(true)}
-            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+            onClick={() => setIsManualModalOpen(true)}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-xs transition cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-blue-600" />
             <span>Manual Dial Log</span>
           </button>
+
           <button
-            onClick={() => setShowCsv(true)}
-            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition"
+            onClick={() => setIsCsvModalOpen(true)}
+            className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
           >
             <UploadCloud className="w-4 h-4" />
             <span>Upload Daily CSV Batch</span>
@@ -48,48 +62,86 @@ export const MeterReadingsView = () => {
         </div>
       </div>
 
-      {/* Meter Readings Table */}
+      {/* KPI Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="text-xs text-slate-400 font-medium">Readings Ingested Today</div>
+          <div className="text-2xl font-extrabold text-blue-600 font-mono mt-1">48 / 48</div>
+          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">100% Coverage (Aug 28)</div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="text-xs text-slate-400 font-medium">Total Daily Society Inflow</div>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono mt-1">16,900 L</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Across all 48 flat meters</div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="text-xs text-slate-400 font-medium">Anomalies Detected</div>
+          <div className="text-2xl font-extrabold text-amber-500 font-mono mt-1">1 Spike</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Flat C-402 (+2,300 L)</div>
+        </div>
+      </div>
+
+      {/* Table */}
       <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-xs">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Gauge className="w-4 h-4 text-blue-600" />
-            <h3 className="font-bold text-sm text-slate-800">Latest Logged Meter Readings</h3>
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="relative w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search flat or meter serial..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+            />
           </div>
-          <span className="text-xs text-slate-400 font-mono">Live Sync Active</span>
+          <span className="text-xs text-slate-400 font-mono">Date: 2026-08-28</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
               <tr>
-                <th className="px-5 py-3.5">Date</th>
-                <th className="px-5 py-3.5">Flat</th>
-                <th className="px-5 py-3.5 font-mono text-right">Prev Dial (L)</th>
-                <th className="px-5 py-3.5 font-mono text-right">Current Dial (L)</th>
-                <th className="px-5 py-3.5 font-mono text-right">Consumption</th>
-                <th className="px-5 py-3.5">Source</th>
-                <th className="px-5 py-3.5 text-center">Anomaly Flag</th>
+                <th className="px-5 py-3.5">Unit & Hardware S/N</th>
+                <th className="px-5 py-3.5 text-right">Previous Reading</th>
+                <th className="px-5 py-3.5 text-right">Current Dial</th>
+                <th className="px-5 py-3.5 text-right">Daily Consumption</th>
+                <th className="px-5 py-3.5">Ingestion Channel</th>
+                <th className="px-5 py-3.5 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {readings.map((r) => (
+              {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/80 transition">
-                  <td className="px-5 py-3.5 font-mono text-slate-600">{r.date}</td>
-                  <td className="px-5 py-3.5 font-bold text-slate-900">Flat {r.flat}</td>
-                  <td className="px-5 py-3.5 font-mono text-right text-slate-500">{r.prev.toLocaleString()}</td>
-                  <td className="px-5 py-3.5 font-mono text-right font-medium text-slate-800">{r.curr.toLocaleString()}</td>
-                  <td className="px-5 py-3.5 font-mono text-right font-bold text-blue-600">
-                    +{r.daily.toLocaleString()} L
+                  <td className="px-5 py-3.5">
+                    <span className="font-bold text-slate-900">Flat {r.flatNo}</span>
+                    <div className="text-[11px] text-slate-400 font-mono">{r.meterSerial}</div>
                   </td>
-                  <td className="px-5 py-3.5 text-slate-500">{r.source}</td>
+                  <td className="px-5 py-3.5 text-right font-mono text-slate-500">
+                    {r.previousReading.toLocaleString()} L
+                  </td>
+                  <td className="px-5 py-3.5 text-right font-mono text-slate-900 font-bold">
+                    {r.currentReading.toLocaleString()} L
+                  </td>
+                  <td className="px-5 py-3.5 text-right font-mono font-extrabold text-blue-600">
+                    +{r.consumption.toLocaleString()} L
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-mono font-semibold">
+                      {r.source}
+                    </span>
+                  </td>
                   <td className="px-5 py-3.5 text-center">
                     {r.isAnomaly ? (
-                      <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold" title={r.reason}>
-                        ⚠️ {r.reason ? 'Leak Spike' : 'Flagged'}
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold inline-flex items-center space-x-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-600" />
+                        <span>Spike Flagged</span>
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-semibold">
-                        Normal
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold inline-flex items-center space-x-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Normal</span>
                       </span>
                     )}
                   </td>
@@ -100,9 +152,17 @@ export const MeterReadingsView = () => {
         </div>
       </div>
 
-      <CSVUploadModal isOpen={showCsv} onClose={() => setShowCsv(false)} />
-      <ManualReadingModal isOpen={showManual} onClose={() => setShowManual(false)} householdId={1} flatNo="A-101" />
+      <CSVUploadModal
+        isOpen={isCsvModalOpen}
+        onClose={() => setIsCsvModalOpen(false)}
+        onUploaded={handleCsvUploaded}
+      />
+
+      <ManualReadingModal
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+        onSaved={handleManualSaved}
+      />
     </div>
   );
 };
-

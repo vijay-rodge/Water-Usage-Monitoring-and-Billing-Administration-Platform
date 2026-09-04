@@ -37,7 +37,11 @@ public class User {
     private String phone;
 
     @Column(nullable = false, length = 30)
-    private String role;
+    private String role; // ADMIN or RESIDENT
+
+    @Column(name = "approval_status", length = 30)
+    @Builder.Default
+    private String approvalStatus = "APPROVED"; // APPROVED, PENDING, REJECTED
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
@@ -46,5 +50,8 @@ public class User {
     @Column(name = "created_at", updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-}
 
+    @Column(name = "updated_at")
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
+}

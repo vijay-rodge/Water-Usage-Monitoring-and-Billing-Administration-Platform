@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Layers, Sliders, CheckCircle2, Save, Sparkles, HelpCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export const TariffPlanConfigView = () => {
+  const { showToast } = useAuth();
+
   // State for Community Tariff Tiers & Fees (Matching Screenshot 573)
   const [tier1Rate, setTier1Rate] = useState(5);
   const [tier1Limit, setTier1Limit] = useState(1000);
@@ -12,8 +15,6 @@ export const TariffPlanConfigView = () => {
   // Simulation Sliders State
   const [simulatedConsumption, setSimulatedConsumption] = useState(15000);
   const [simulatedDelayMonths, setSimulatedDelayMonths] = useState(1);
-
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Math computation
   const tier1Consumption = Math.min(simulatedConsumption, tier1Limit);
@@ -26,8 +27,7 @@ export const TariffPlanConfigView = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    showToast(`Tariff scheme updated! Tier 1: ₹${tier1Rate}/L (up to ${tier1Limit} L), Tier 2: ₹${tier2Rate}/L. Saved to database.`, 'success');
   };
 
   return (
@@ -133,16 +133,10 @@ export const TariffPlanConfigView = () => {
             </div>
 
             {/* Actions */}
-            <div className="pt-2 flex items-center justify-between">
-              {savedSuccess && (
-                <span className="flex items-center space-x-1 text-emerald-600 font-semibold text-xs">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Tariff Scheme Saved!</span>
-                </span>
-              )}
+            <div className="pt-2 flex items-center justify-end">
               <button
                 type="submit"
-                className="ml-auto flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition"
+                className="flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>Save Scheme Changes</span>
@@ -249,4 +243,3 @@ export const TariffPlanConfigView = () => {
     </div>
   );
 };
-

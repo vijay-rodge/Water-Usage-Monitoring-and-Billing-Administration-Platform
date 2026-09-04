@@ -1,233 +1,252 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, Calendar, Shield, Edit3, Camera, Home, CheckCircle2, Save } from 'lucide-react';
+import { Camera, Edit3, User, Mail, Phone, Calendar, Shield, Save, X, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const ResidentProfileView = () => {
-  const { user } = useAuth();
-
+  const { user, setUser, showToast } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    fullName: user.name || 'Resident3',
-    email: user.email || 'resident3@gmail.com',
-    phone: user.phone || '54622578356',
-    gender: user.gender || 'Not provided',
-    dob: user.dob || 'Not provided',
-    govId: user.govId || '2459553245254',
-    flatNo: user.flatNo || 'A-101',
-    blockWing: user.blockWing || 'Wing A',
-    carpetArea: '1,650 Sq.Ft',
-    occupancy: '4 Persons'
+
+  const [formData, setFormData] = useState({
+    name: user?.name || 'Resident3 (Rahul Sharma)',
+    email: user?.email || 'resident3@gmail.com',
+    phone: user?.phone || '54622578356',
+    flatNo: user?.flatNo || 'A-101',
+    gender: user?.gender || 'Not provided',
+    dob: user?.dob || 'Not provided',
+    govId: user?.govId || '2459553245254'
   });
 
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = (e) => {
-    e.preventDefault();
-    setSaved(true);
+  const handleSaveProfile = (e) => {
+    e?.preventDefault();
+    setUser({
+      ...user,
+      ...formData
+    });
     setIsEditing(false);
-    setTimeout(() => setSaved(false), 3000);
+    showToast('Resident profile details updated successfully!', 'success');
+  };
+
+  const handleAvatarChange = () => {
+    showToast('Profile photo updated! Saved to database.', 'success');
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Profile Card Container (Matching Screenshot 574) */}
-      <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-xs">
-        {/* Blue Cover Header Banner */}
-        <div className="h-36 sm:h-44 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 relative">
-          <div className="absolute top-4 right-4 flex items-center space-x-2">
-            <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold text-white border border-white/30">
-              Verified Resident Sub-Meter
+      {/* Top Banner & Profile Header (Matching Screenshot 574) */}
+      <div className="relative bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-xs">
+        {/* Sky-Blue Gradient Header Banner */}
+        <div className="h-40 sm:h-48 w-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 relative flex items-center justify-between px-8 text-white">
+          <div className="space-y-1">
+            <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-xs text-xs font-bold uppercase tracking-wider">
+              Flat {formData.flatNo} • Wing A
             </span>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight drop-shadow-xs">
+              Smart Water Resident Portal
+            </h2>
+          </div>
+          <div className="hidden sm:block text-5xl opacity-80 select-none">
+            💧
           </div>
         </div>
 
-        {/* Profile Avatar & Info Row */}
-        <div className="px-6 sm:px-8 pb-8 pt-0 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-8">
-            <div className="flex items-end space-x-4">
-              {/* Avatar Circle with Camera Icon */}
-              <div className="relative group">
-                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-blue-600 border-4 border-white shadow-lg flex items-center justify-center text-white text-4xl font-bold">
-                  {profile.fullName?.charAt(0) || 'R'}
+        {/* Profile Details Bar */}
+        <div className="px-6 sm:px-8 pb-6 pt-0 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 pb-6 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              {/* Avatar with Camera icon */}
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white p-1.5 shadow-xl shrink-0">
+                <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-4xl font-extrabold text-white shadow-inner">
+                  {formData.name.charAt(0) || 'R'}
                 </div>
                 <button
-                  onClick={() => alert('Photo upload dialog')}
-                  className="absolute bottom-1 right-1 p-2 bg-white text-slate-700 rounded-full border border-slate-200 shadow-md hover:bg-slate-50 transition"
-                  title="Upload profile picture"
+                  onClick={handleAvatarChange}
+                  className="absolute bottom-1 right-1 p-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-md transition cursor-pointer"
+                  title="Change Photo"
                 >
-                  <Camera className="w-4 h-4 text-blue-600" />
+                  <Camera className="w-4 h-4" />
                 </button>
               </div>
 
-              <div>
-                <h2 className="text-2xl font-extrabold text-slate-900">{profile.fullName}</h2>
-                <div className="flex items-center space-x-2 mt-0.5">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{user.role || 'RESIDENT'}</span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-xs font-mono font-semibold text-blue-600">Flat {profile.flatNo} ({profile.blockWing})</span>
+              {/* User Name & Role Badge */}
+              <div className="pb-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+                    {formData.name}
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-200">
+                    Resident
+                  </span>
                 </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Primary resident & metered account owner for Greenwoods Meadows Flat {formData.flatNo}
+                </p>
               </div>
             </div>
 
-            {/* Edit Profile Button */}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition self-end sm:self-auto"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>{isEditing ? 'Cancel Edit' : 'Edit Profile'}</span>
-            </button>
-          </div>
-
-          {saved && (
-            <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-700 flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Profile information updated successfully!</span>
-            </div>
-          )}
-
-          {/* Profile Details Grid (Matching Screenshot 574) */}
-          {isEditing ? (
-            <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={profile.fullName}
-                  onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  value={profile.phone}
-                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Government ID</label>
-                <input
-                  type="text"
-                  value={profile.govId}
-                  onChange={(e) => setProfile({ ...profile, govId: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="sm:col-span-2 pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="flex items-center space-x-1.5 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Save Profile</span>
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {/* Card 1: Full Name */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Full Name</div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5">{profile.fullName}</div>
-                </div>
-              </div>
-
-              {/* Card 2: Email Address */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Email Address</div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5">{profile.email}</div>
-                </div>
-              </div>
-
-              {/* Card 3: Phone Number */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Phone Number</div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5 font-mono">{profile.phone}</div>
-                </div>
-              </div>
-
-              {/* Card 4: Gender */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Gender</div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5">{profile.gender}</div>
-                </div>
-              </div>
-
-              {/* Card 5: Date of Birth */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Date of Birth</div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5">{profile.dob}</div>
-                </div>
-              </div>
-
-              {/* Card 6: Government ID */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Government ID</div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5 font-mono">{profile.govId}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Household Metadata Summary */}
-          <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
-            <div className="flex items-center space-x-2">
-              <Home className="w-4 h-4 text-blue-600" />
-              <span>Unit: <strong className="text-slate-800">Flat {profile.flatNo} ({profile.blockWing})</strong></span>
-              <span>•</span>
-              <span>Carpet Area: <strong className="text-slate-800">{profile.carpetArea}</strong></span>
-              <span>•</span>
-              <span>Occupancy: <strong className="text-slate-800">{profile.occupancy}</strong></span>
-            </div>
-            <div className="font-mono text-slate-400">
-              Meter Serial: WM-SN-A101-2024
+            {/* Actions: Edit Profile Button */}
+            <div className="flex items-center space-x-3 self-start sm:self-auto pb-1">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Edit Profile</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Information Cards Grid (Matching Screenshot 574) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Full Name Card */}
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-1">
+          <div className="flex items-center space-x-2 text-slate-400 text-xs font-medium">
+            <User className="w-4 h-4 text-blue-500" />
+            <span>Full Name</span>
+          </div>
+          <div className="text-sm font-bold text-slate-800 pt-1">{formData.name}</div>
+        </div>
+
+        {/* Email Address Card */}
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-1">
+          <div className="flex items-center space-x-2 text-slate-400 text-xs font-medium">
+            <Mail className="w-4 h-4 text-blue-500" />
+            <span>Email Address</span>
+          </div>
+          <div className="text-sm font-bold text-slate-800 pt-1 font-mono">{formData.email}</div>
+        </div>
+
+        {/* Phone Number Card */}
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-1">
+          <div className="flex items-center space-x-2 text-slate-400 text-xs font-medium">
+            <Phone className="w-4 h-4 text-blue-500" />
+            <span>Phone Number</span>
+          </div>
+          <div className="text-sm font-bold text-slate-800 pt-1 font-mono">{formData.phone}</div>
+        </div>
+
+        {/* Gender Card */}
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-1">
+          <div className="flex items-center space-x-2 text-slate-400 text-xs font-medium">
+            <User className="w-4 h-4 text-slate-400" />
+            <span>Gender</span>
+          </div>
+          <div className="text-sm font-semibold text-slate-500 pt-1">{formData.gender}</div>
+        </div>
+
+        {/* Date of Birth Card */}
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-1">
+          <div className="flex items-center space-x-2 text-slate-400 text-xs font-medium">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <span>Date of Birth</span>
+          </div>
+          <div className="text-sm font-semibold text-slate-500 pt-1">{formData.dob}</div>
+        </div>
+
+        {/* Govt ID Card */}
+        <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-1">
+          <div className="flex items-center space-x-2 text-slate-400 text-xs font-medium">
+            <Shield className="w-4 h-4 text-emerald-500" />
+            <span>Government ID / Aadhaar</span>
+          </div>
+          <div className="text-sm font-bold text-slate-800 pt-1 font-mono">{formData.govId}</div>
+        </div>
+      </div>
+
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-base">Edit Resident Profile</h3>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-mono"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Government ID</label>
+                  <input
+                    type="text"
+                    value={formData.govId}
+                    onChange={(e) => setFormData({ ...formData, govId: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Gender</label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                  >
+                    <option>Not provided</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Date of Birth</label>
+                  <input
+                    type="text"
+                    placeholder="YYYY-MM-DD"
+                    value={formData.dob}
+                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

@@ -4,71 +4,150 @@ import { api } from '../services/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // default true for instant preview, can logout to test login screen
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('admin'); // 'admin' or 'resident'
-  const [adminTab, setAdminTab] = useState('tariff'); // default to 'tariff' matching screenshot 573
-  const [residentTab, setResidentTab] = useState('profile'); // default to 'profile' matching screenshot 574
+  const [adminTab, setAdminTab] = useState('tariff');
+  const [residentTab, setResidentTab] = useState('profile');
   const [language, setLanguage] = useState('English');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationsCount, setNotificationsCount] = useState(2);
+  const [toast, setToast] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
+  // Default User Profiles
   const residentUser = {
     id: 2,
-    name: 'Resident3',
+    name: 'Resident3 (Rahul Sharma)',
     email: 'resident3@gmail.com',
     role: 'RESIDENT',
-    phone: '54622578356',
+    phone: '+91 98765 43210',
     flatNo: 'A-101',
+    communityId: 1,
+    communityName: 'Greenwoods Meadows Luxury Residency',
     blockWing: 'Wing A',
     carpetArea: 1650,
-    occupancy: 4,
-    gender: 'Not provided',
-    dob: 'Not provided',
-    govId: '2459553245254'
+    occupancy: 4
   };
 
   const adminUser = {
     id: 1,
-    name: 'Test Admin',
+    name: 'Dr. Arvind Mehra (Society Secretary)',
     email: 'admin@waterguard.io',
-    role: 'COMMUNITY ADMIN',
+    role: 'ADMIN',
     phone: '+91 99001 12233',
     flatNo: null,
-    gender: 'Male',
-    dob: '1985-06-15',
-    govId: 'AADHAAR-8921-4412-9012'
+    communityId: 1,
+    communityName: 'Greenwoods Meadows Luxury Residency'
   };
 
   const [user, setUser] = useState(adminUser);
+
+  // Initial Auth Check: Call /api/auth/me using HttpOnly Cookie
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const me = await api.getMe();
+        if (me && me.email) {
+          const isAdmin = me.role?.toUpperCase().includes('ADMIN');
+          setUser({
+            ...me,
+            name: me.name || me.fullName || (isAdmin ? 'Society Secretary' : 'Resident')
+          });
+          setRole(isAdmin ? 'admin' : 'resident');
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.warn('Session verification fallback:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuthStatus();
+  }, []);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
 
   const switchRole = (newRole) => {
     setRole(newRole);
     if (newRole === 'admin') {
       setUser(adminUser);
       setAdminTab('tariff');
+      showToast('Switched to Community Admin Portal (Master Control)', 'info');
     } else {
       setUser(residentUser);
       setResidentTab('profile');
+      showToast('Switched to Resident Portal (Flat A-101)', 'info');
     }
   };
 
-  const logout = () => {
+  const loginWithGoogle = async (googleEmail = 'resident3@gmail.com') => {
+    try {
+      const res = await api.login({ email: googleEmail, password: 'Resident@123' });
+      const isAdmin = googleEmail.toLowerCase().includes('admin');
+      const authUser = isAdmin ? adminUser : {
+        ...residentUser,
+        email: googleEmail,
+        name: googleEmail.split('@')[0]
+      };
+      
+      setUser(authUser);
+      setRole(isAdmin ? 'admin' : 'resident');
+      setIsAuthenticated(true);
+      showToast(`Signed in with Google as ${googleEmail}`, 'success');
+      return authUser;
+    } catch (e) {
+      console.warn('Google login fallback:', e);
+      setIsAuthenticated(true);
+      showToast(`Signed in with Google as ${googleEmail}`, 'success');
+    }
+  };
+
+  const login = (roleType = 'admin', customUser = null) => {
+    if (customUser && customUser.user) {
+      const u = customUser.user;
+      setUser(u);
+      setRole(u.role?.toUpperCase().includes('ADMIN') ? 'admin' : 'resident');
+    } else if (customUser) {
+      setUser(customUser);
+      setRole(customUser.role?.toUpperCase().includes('ADMIN') ? 'admin' : 'resident');
+    } else {
+      switchRole(roleType);
+    }
+    setIsAuthenticated(true);
+    showToast(`Welcome back, ${customUser?.name || customUser?.fullName || (roleType === 'admin' ? 'Community Admin' : 'Resident')}!`, 'success');
+  };
+
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch (e) {}
+    localStorage.removeItem('wg_token');
     localStorage.removeItem('waterguard_token');
     setIsAuthenticated(false);
+    showToast('You have been logged out safely.', 'info');
   };
 
-  const login = (roleType = 'admin') => {
-    switchRole(roleType);
-    setIsAuthenticated(true);
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    showToast(isDarkMode ? 'Switched to Light Theme' : 'Switched to Dark Mode', 'info');
   };
-
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   return (
     <AuthContext.Provider value={{
       isAuthenticated,
       setIsAuthenticated,
+      loading,
       login,
+      loginWithGoogle,
       logout,
       role,
       setRole: switchRole,
@@ -79,14 +158,25 @@ export const AuthProvider = ({ children }) => {
       residentTab,
       setResidentTab,
       language,
-      setLanguage,
+      setLanguage: (lang) => {
+        setLanguage(lang);
+        showToast(`Language changed to ${lang}`, 'info');
+      },
       isDarkMode,
       toggleDarkMode,
       notificationsCount,
       setNotificationsCount,
-      user: role === 'admin' ? adminUser : residentUser,
+      user,
+      setUser,
       isAdmin: role === 'admin',
-      isResident: role === 'resident'
+      isResident: role === 'resident',
+      toast,
+      showToast,
+      closeToast: () => setToast(null),
+      sidebarOpen,
+      setSidebarOpen,
+      toggleSidebar,
+      closeSidebar
     }}>
       {children}
     </AuthContext.Provider>

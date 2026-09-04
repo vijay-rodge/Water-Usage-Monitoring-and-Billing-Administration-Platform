@@ -23,6 +23,9 @@ public class Apartment {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
+    @Column(name = "society_email", length = 150)
+    private String societyEmail;
+
     @Column(nullable = false, length = 255)
     private String address;
 

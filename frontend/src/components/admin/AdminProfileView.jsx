@@ -35,30 +35,33 @@ export const AdminProfileView = () => {
         </div>
 
         <div className="px-6 sm:px-8 pb-8 pt-0 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-8">
-            <div className="flex items-end space-x-4">
-              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-indigo-600 border-4 border-white shadow-lg flex items-center justify-center text-white text-4xl font-bold">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 pb-6 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-indigo-600 border-4 border-white shadow-xl flex items-center justify-center text-white text-4xl font-extrabold shrink-0">
                 {profile.fullName.charAt(0)}
               </div>
-              <div>
-                <h2 className="text-2xl font-extrabold text-slate-900">{profile.fullName}</h2>
-                <div className="flex items-center space-x-2 mt-0.5">
-                  <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{profile.title}</span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-xs text-slate-500">{profile.society}</span>
+              <div className="pb-1">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{profile.fullName}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider border border-blue-200">
+                    {profile.title}
+                  </span>
+                  <span className="text-slate-300 hidden sm:inline">•</span>
+                  <span className="text-xs text-slate-500 font-semibold">{profile.society}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {saved && (
-            <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-700 flex items-center space-x-2">
+            <div className="mt-6 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-700 flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Admin credentials updated successfully!</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="pt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
               <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                 <User className="w-5 h-5" />
@@ -107,6 +110,7 @@ export const AdminProfileView = () => {
                 <div className="text-[11px] text-slate-400 font-medium">RWA Registration ID</div>
                 <div className="text-xs font-bold text-slate-800 mt-0.5 font-mono">{profile.govId}</div>
               </div>
+            </div>
             </div>
           </div>
         </div>
