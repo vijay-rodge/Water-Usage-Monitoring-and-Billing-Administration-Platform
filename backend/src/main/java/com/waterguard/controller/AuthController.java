@@ -97,36 +97,47 @@ public class AuthController {
     // =========================================================================
 
     @GetMapping("/pending-residents")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<AuthDto.PendingResidentDto>> getPendingResidents(
+            @RequestParam(required = false) Long communityId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long communityId = principal.getCommunityId() != null ? principal.getCommunityId() : 1L;
-        List<AuthDto.PendingResidentDto> pending = authService.getPendingResidents(communityId);
+        Long targetCommunityId = communityId != null ? communityId : (principal != null && principal.getCommunityId() != null ? principal.getCommunityId() : 1L);
+        List<AuthDto.PendingResidentDto> pending = authService.getPendingResidents(targetCommunityId);
         return ResponseEntity.ok(pending);
     }
 
     @PostMapping("/approve-resident/{residentId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AuthDto.UserSummary> approveResident(
             @PathVariable Long residentId,
+            @RequestParam(required = false) Long communityId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long communityId = principal.getCommunityId() != null ? principal.getCommunityId() : 1L;
-        AuthDto.UserSummary approved = authService.approveResident(residentId, communityId);
+        Long targetCommunityId = communityId != null ? communityId : (principal != null && principal.getCommunityId() != null ? principal.getCommunityId() : 1L);
+        AuthDto.UserSummary approved = authService.approveResident(residentId, targetCommunityId);
         return ResponseEntity.ok(approved);
     }
 
     @PostMapping("/reject-resident/{residentId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AuthDto.MessageResponse> rejectResident(
             @PathVariable Long residentId,
+            @RequestParam(required = false) Long communityId,
             @RequestBody(required = false) Map<String, String> body,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        Long communityId = principal.getCommunityId() != null ? principal.getCommunityId() : 1L;
+        Long targetCommunityId = communityId != null ? communityId : (principal != null && principal.getCommunityId() != null ? principal.getCommunityId() : 1L);
         String reason = body != null && body.containsKey("reason") ? body.get("reason") : "Declined by Administrator";
-        AuthDto.MessageResponse response = authService.rejectResident(residentId, communityId, reason);
+        AuthDto.MessageResponse response = authService.rejectResident(residentId, targetCommunityId, reason);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/pending-residents/{residentId}")
+    public ResponseEntity<AuthDto.MessageResponse> deletePendingResident(
+            @PathVariable Long residentId,
+            @RequestParam(required = false) Long communityId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long targetCommunityId = communityId != null ? communityId : (principal != null && principal.getCommunityId() != null ? principal.getCommunityId() : 1L);
+        AuthDto.MessageResponse response = authService.deletePendingResident(residentId, targetCommunityId);
         return ResponseEntity.ok(response);
     }
 }

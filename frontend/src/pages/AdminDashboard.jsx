@@ -18,8 +18,10 @@ import { api } from '../services/api';
 import { WaterUsageChart } from '../components/WaterUsageChart';
 import { AnomalyAlertBanner } from '../components/AnomalyAlertBanner';
 import { CSVUploadModal } from '../components/CSVUploadModal';
+import { useAuth } from '../context/AuthContext';
 
 export const AdminDashboard = () => {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCsvModal, setShowCsvModal] = useState(false);
@@ -27,7 +29,8 @@ export const AdminDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await api.getAdminDashboard(1);
+      const aptId = user?.communityId || user?.apartmentId || 1;
+      const res = await api.getAdminDashboard(aptId);
       setData(res);
     } catch (e) {
       console.error(e);
@@ -38,7 +41,7 @@ export const AdminDashboard = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user?.communityId, user?.apartmentId]);
 
   if (loading || !data) {
     return (
@@ -60,14 +63,14 @@ export const AdminDashboard = () => {
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                {data.apartmentName}
+                {data.apartmentName || user?.communityName || 'Community Admin Console'}
               </h1>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold font-mono">
                 Admin Console
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 font-mono">
-              48 Total Flats • 18,500 Sq.Ft Common Area • Bengaluru Central
+              {data.totalHouseholds || user?.totalFlats || 0} Total Flats • {data.commonAreaSqft ? `${Number(data.commonAreaSqft).toLocaleString()} Sq.Ft Common Area` : 'Sub-Meter Telemetry'} • {data.apartmentCode ? `Code: ${data.apartmentCode}` : 'Live Monitoring'}
             </p>
           </div>
         </div>

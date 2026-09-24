@@ -34,6 +34,7 @@ public class AuthService {
     private final AlertRepository alertRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
     public AuthDto.AuthResponse authenticateUser(AuthDto.LoginRequest loginRequest) {
@@ -77,7 +78,9 @@ public class AuthService {
 
         Apartment apartment = null;
         String communityName = registerRequest.getCommunityName();
-        boolean isCommunityOnboarding = communityName != null && !communityName.isBlank();
+        boolean isResident = "RESIDENT".equalsIgnoreCase(registerRequest.getRole()) 
+                || (registerRequest.getFlatNo() != null && !registerRequest.getFlatNo().isBlank() && !"ADMIN".equalsIgnoreCase(registerRequest.getRole()));
+        boolean isCommunityOnboarding = !isResident && communityName != null && !communityName.isBlank();
 
         if (isCommunityOnboarding) {
             // 1. UNIQUE ADMIN PER COMMUNITY RULE
@@ -131,6 +134,9 @@ public class AuthService {
 
             adminUser = userRepository.save(adminUser);
             log.info("Created Community Admin: ID={}, Email={}, Community={}", adminUser.getId(), adminUser.getEmail(), apartment.getName());
+
+            // 1. Send Welcome Email to Community Admin
+            emailService.sendCommunityAdminWelcome(adminUser.getEmail(), adminUser.getFullName(), apartment.getName(), apartment.getCode());
 
             String jwt = jwtUtils.generateJwtToken(adminUser.getId(), adminUser.getEmail(), apartment.getId(), "ADMIN");
 
@@ -217,6 +223,29 @@ public class AuthService {
 
             alertRepository.save(approvalAlert);
 
+            // 2. Send Alert Email to Community Admin
+            if (admin != null && admin.getEmail() != null) {
+                emailService.sendResidentRegistrationAlertToAdmin(
+                        admin.getEmail(),
+                        admin.getFullName(),
+                        resident.getFullName(),
+                        resident.getEmail(),
+                        resident.getPhone(),
+                        flatNo,
+                        registerRequest.getWing() != null ? registerRequest.getWing() : "Wing A",
+                        targetApt.getName()
+                );
+            }
+
+            // 3. Send Acknowledgement Email to Resident
+            emailService.sendResidentRegistrationAck(
+                    resident.getEmail(),
+                    resident.getFullName(),
+                    flatNo,
+                    targetApt.getName(),
+                    admin != null ? admin.getFullName() : "Community Administrator"
+            );
+
             return AuthDto.AuthResponse.builder()
                     .success(true)
                     .pendingApproval(true)
@@ -264,6 +293,11 @@ public class AuthService {
                 .build();
         alertRepository.save(notification);
 
+        // Send Approval Email to Resident
+        String flatNo = resident.getHousehold() != null ? resident.getHousehold().getFlatNo() : "";
+        String communityName = resident.getApartment() != null ? resident.getApartment().getName() : "Your Community";
+        emailService.sendResidentApprovedEmail(resident.getEmail(), resident.getFullName(), flatNo, communityName);
+
         log.info("Resident approved by Admin: ID={}, Email={}", resident.getId(), resident.getEmail());
         return buildUserSummary(resident);
     }
@@ -282,10 +316,43 @@ public class AuthService {
         resident.setUpdatedAt(LocalDateTime.now());
         userRepository.save(resident);
 
+        // Send Decline Email to Resident
+        String flatNo = resident.getHousehold() != null ? resident.getHousehold().getFlatNo() : "";
+        String communityName = resident.getApartment() != null ? resident.getApartment().getName() : "Your Community";
+        emailService.sendResidentDeclinedEmail(resident.getEmail(), resident.getFullName(), flatNo, communityName, reason);
+
         log.info("Resident registration declined by Admin: ID={}, Reason={}", resident.getId(), reason);
         return AuthDto.MessageResponse.builder()
                 .success(true)
                 .message("Resident registration request for " + resident.getFullName() + " was declined.")
+                .build();
+    }
+
+    @Transactional
+    public AuthDto.MessageResponse deletePendingResident(Long residentId, Long adminCommunityId) {
+        User resident = userRepository.findById(residentId)
+                .orElseThrow(() -> new IllegalArgumentException("Resident record not found with ID: " + residentId));
+
+        if (resident.getApartment() == null || !resident.getApartment().getId().equals(adminCommunityId)) {
+            throw new SecurityException("Unauthorized: You can only delete residents belonging to your own community.");
+        }
+
+        Household household = resident.getHousehold();
+
+        List<Alert> alerts = alertRepository.findAll().stream()
+                .filter(a -> resident.equals(a.getUser()) || (household != null && household.equals(a.getHousehold())))
+                .toList();
+        alertRepository.deleteAll(alerts);
+
+        userRepository.delete(resident);
+        if (household != null && ("PENDING".equalsIgnoreCase(household.getStatus()) || "REJECTED".equalsIgnoreCase(household.getStatus()))) {
+            householdRepository.delete(household);
+        }
+
+        log.info("Pending resident request deleted by Admin: ID={}", residentId);
+        return AuthDto.MessageResponse.builder()
+                .success(true)
+                .message("Resident registration request deleted successfully.")
                 .build();
     }
 

@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Plus, Home, Phone, Mail, CheckCircle2, XCircle, Clock, ShieldCheck } from 'lucide-react';
+import { Users, Search, Filter, Plus, Home, Phone, Mail, CheckCircle2, XCircle, Clock, ShieldCheck, Trash2 } from 'lucide-react';
 import { RegisterUnitModal } from '../modals/RegisterUnitModal';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 
 export const HouseholdsDirectory = () => {
-  const { showToast } = useAuth();
+  const { user, showToast } = useAuth();
+  const aptId = user?.communityId || user?.apartmentId || 1;
   const [searchTerm, setSearchTerm] = useState('');
   const [bhkFilter, setBhkFilter] = useState('ALL');
   const [showAddModal, setShowAddModal] = useState(false);
   const [pendingResidents, setPendingResidents] = useState([]);
   const [loadingApprovals, setLoadingApprovals] = useState(false);
 
-  const [flats, setFlats] = useState([
+  const defaultFlats = [
     { id: 1, flatNo: 'A-101', wing: 'Wing A', floor: 1, bhk: '3BHK', area: 1650, occupancy: 4, meterSerial: 'WM-SN-A101-2024', owner: 'Rahul Sharma', email: 'resident3@gmail.com', phone: '+91 98765 43210', status: 'ACTIVE' },
     { id: 2, flatNo: 'A-102', wing: 'Wing A', floor: 1, bhk: '2BHK', area: 1200, occupancy: 3, meterSerial: 'WM-SN-A102-2024', owner: 'Ananya Sen', email: 'ananya.sen@example.com', phone: '+91 98765 43211', status: 'ACTIVE' },
     { id: 3, flatNo: 'A-201', wing: 'Wing A', floor: 2, bhk: '3BHK', area: 1650, occupancy: 4, meterSerial: 'WM-SN-A201-2024', owner: 'Suresh Iyer', email: 'suresh.iyer@example.com', phone: '+91 98765 43212', status: 'ACTIVE' },
@@ -21,17 +22,48 @@ export const HouseholdsDirectory = () => {
     { id: 6, flatNo: 'B-301', wing: 'Wing B', floor: 3, bhk: '4BHK', area: 2300, occupancy: 5, meterSerial: 'WM-SN-B301-2024', owner: 'Arjun Reddy', email: 'arjun.reddy@example.com', phone: '+91 98765 43215', status: 'ACTIVE' },
     { id: 7, flatNo: 'C-101', wing: 'Wing C', floor: 1, bhk: '1BHK', area: 750, occupancy: 1, meterSerial: 'WM-SN-C101-2024', owner: 'Vikram Patel', email: 'vikram.patel@waterguard.io', phone: '+91 98765 43216', status: 'ACTIVE' },
     { id: 8, flatNo: 'C-402', wing: 'Wing C', floor: 4, bhk: 'PENTHOUSE', area: 3100, occupancy: 6, meterSerial: 'WM-SN-C402-2024', owner: 'Meera Deshmukh', email: 'meera.deshmukh@example.com', phone: '+91 98765 43217', status: 'ACTIVE' },
-  ]);
+  ];
 
-  // Load pending approvals on mount
+  const [flats, setFlats] = useState(aptId === 1 ? defaultFlats : []);
+
+  const loadApartmentFlats = async () => {
+    try {
+      const backendHouseholds = await api.getApartmentHouseholds(aptId);
+      if (backendHouseholds && backendHouseholds.length > 0) {
+        setFlats(backendHouseholds.map(h => ({
+          id: h.id,
+          flatNo: h.flatNo,
+          wing: h.blockWing || 'Wing A',
+          floor: h.floorNo || 1,
+          bhk: h.bhkType || '2BHK',
+          area: Number(h.carpetAreaSqft) || 1200,
+          occupancy: h.occupancyCount || 3,
+          meterSerial: h.meterSerialNo || `WM-SN-${h.flatNo}-2026`,
+          owner: h.ownerName || 'Resident',
+          email: h.ownerEmail || 'resident@example.com',
+          phone: h.ownerPhone || '+91 98765 00000',
+          status: h.status || 'ACTIVE'
+        })));
+      } else if (aptId !== 1) {
+        setFlats([]);
+      } else {
+        setFlats(defaultFlats);
+      }
+    } catch (e) {
+      console.warn('Could not load apartment flats:', e);
+    }
+  };
+
+  // Load pending approvals and flats on mount
   useEffect(() => {
     loadPending();
-  }, []);
+    loadApartmentFlats();
+  }, [aptId]);
 
   const loadPending = async () => {
     try {
       setLoadingApprovals(true);
-      const list = await api.getPendingResidents();
+      const list = await api.getPendingResidents(aptId);
       setPendingResidents(list || []);
     } catch (e) {
       console.warn('Could not load pending residents:', e);
@@ -42,28 +74,14 @@ export const HouseholdsDirectory = () => {
 
   const handleApprove = async (resident) => {
     try {
-      await api.approveResident(resident.id);
+      await api.approveResident(resident.id, aptId);
       showToast(`Resident ${resident.fullName} for Flat ${resident.flatNo} approved successfully!`, 'success');
       
       // Remove from pending list
       setPendingResidents(pendingResidents.filter(p => p.id !== resident.id));
 
-      // Add to active directory list
-      const newActiveFlat = {
-        id: resident.id,
-        flatNo: resident.flatNo,
-        wing: resident.blockWing || 'Wing A',
-        floor: 1,
-        bhk: '2BHK',
-        area: 1200,
-        occupancy: 3,
-        meterSerial: `WM-SN-${resident.flatNo.replace('-', '')}-2026`,
-        owner: resident.fullName,
-        email: resident.email,
-        phone: resident.phone || '+91 98765 00000',
-        status: 'ACTIVE'
-      };
-      setFlats([newActiveFlat, ...flats]);
+      // Reload active flats from server to get accurate data
+      await loadApartmentFlats();
     } catch (err) {
       showToast(err.message || 'Failed to approve resident', 'error');
     }
@@ -71,7 +89,7 @@ export const HouseholdsDirectory = () => {
 
   const handleReject = async (resident) => {
     try {
-      await api.rejectResident(resident.id, 'Declined by Administrator');
+      await api.rejectResident(resident.id, 'Declined by Administrator', aptId);
       showToast(`Registration request for Flat ${resident.flatNo} was declined.`, 'info');
       setPendingResidents(pendingResidents.filter(p => p.id !== resident.id));
     } catch (err) {
@@ -79,14 +97,27 @@ export const HouseholdsDirectory = () => {
     }
   };
 
+  const handleDelete = async (resident) => {
+    if (!window.confirm(`Are you sure you want to delete the pending request from ${resident.fullName} (Flat ${resident.flatNo})?`)) {
+      return;
+    }
+    try {
+      await api.deletePendingResident(resident.id, aptId);
+      showToast(`Registration request for Flat ${resident.flatNo} was deleted.`, 'info');
+      setPendingResidents(pendingResidents.filter(p => p.id !== resident.id));
+    } catch (err) {
+      showToast(err.message || 'Failed to delete request', 'error');
+    }
+  };
+
   const handleUnitAdded = (newUnit) => {
     setFlats([newUnit, ...flats]);
   };
 
-  const filtered = flats.filter(f => {
-    const matchesSearch = f.flatNo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          f.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          f.meterSerial.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredFlats = flats.filter(f => {
+    const matchesSearch = (f.flatNo || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (f.owner || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (f.meterSerial || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesBhk = bhkFilter === 'ALL' || f.bhk === bhkFilter;
     return matchesSearch && matchesBhk;
   });
@@ -96,10 +127,10 @@ export const HouseholdsDirectory = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
-            Households Directory
+            {user?.communityName ? `${user.communityName} Directory` : 'Households Directory'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Community flat registry, unique administrator approvals, and sub-meter telemetry hardware.
+            {user?.communityName || 'Community'} flat registry, unique administrator approvals, and sub-meter telemetry hardware.
           </p>
         </div>
 
@@ -116,62 +147,71 @@ export const HouseholdsDirectory = () => {
       {/* PENDING RESIDENT APPROVALS SECTION (Unique Admin Workflow)                 */}
       {/* ========================================================================= */}
       {pendingResidents.length > 0 && (
-        <div className="bg-amber-50/80 border border-amber-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-amber-950 text-sm">
+                <h3 className="font-bold text-amber-950 dark:text-amber-200 text-sm">
                   Pending Resident Registration Requests ({pendingResidents.length})
                 </h3>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-amber-700 dark:text-amber-300">
                   Residents who registered for your community and are awaiting your authorization.
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold uppercase tracking-wider">
+            <span className="px-2.5 py-1 rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 text-[10px] font-bold uppercase tracking-wider">
               Action Required
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
             {pendingResidents.map((resident) => (
-              <div key={resident.id} className="bg-white border border-amber-200/90 rounded-2xl p-4 shadow-xs space-y-3">
+              <div key={resident.id} className="bg-white dark:bg-slate-900 border border-amber-200/90 dark:border-amber-800/60 rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-bold text-slate-900 text-xs flex items-center space-x-2">
+                    <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center space-x-2">
                       <span className="text-sm">{resident.fullName}</span>
-                      <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-mono text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-cyan-300 border border-blue-200 dark:border-blue-800 font-mono text-[10px] font-bold">
                         Flat {resident.flatNo}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex flex-col gap-0.5 font-mono">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex flex-col gap-0.5 font-mono">
                       <span>✉️ {resident.email}</span>
                       {resident.phone && <span>📞 {resident.phone}</span>}
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                     {resident.blockWing || 'Wing A'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                   <button
-                    onClick={() => handleReject(resident)}
-                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-xs font-semibold transition cursor-pointer"
+                    onClick={() => handleDelete(resident)}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800 transition text-xs cursor-pointer"
+                    title="Delete Request"
                   >
-                    <XCircle className="w-3.5 h-3.5" />
-                    <span>Decline</span>
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => handleApprove(resident)}
-                    className="flex items-center space-x-1 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Approve Flat</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleReject(resident)}
+                      className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Decline</span>
+                    </button>
+                    <button
+                      onClick={() => handleApprove(resident)}
+                      className="flex items-center space-x-1 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Approve Flat</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -226,7 +266,7 @@ export const HouseholdsDirectory = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filtered.map((flat) => (
+              {filteredFlats.map((flat) => (
                 <tr key={flat.id} className="hover:bg-slate-50/70 transition">
                   <td className="px-5 py-4">
                     <div className="flex items-center space-x-2.5">
@@ -273,6 +313,15 @@ export const HouseholdsDirectory = () => {
                   </td>
                 </tr>
               ))}
+              {filteredFlats.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400">
+                    <Home className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+                    <p className="text-xs font-semibold text-slate-500">No household units found</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Click "Register New Unit" to add flats in {user?.communityName || 'this community'}.</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

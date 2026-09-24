@@ -5,13 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 export const AdminProfileView = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState({
-    fullName: user.name || 'Dr. Arvind Mehra',
+    fullName: user?.name || user?.fullName || 'Community Administrator',
     title: 'Society General Secretary & Water In-Charge',
-    email: user.email || 'admin@waterguard.io',
-    phone: user.phone || '+91 99001 12233',
-    society: 'Greenwoods Meadows Luxury Residency',
-    societyCode: 'GWM-BLR-01',
-    address: 'Plot 42, Sarjapur Outer Ring Road, Bellandur, Bengaluru',
+    email: user?.email || 'admin@waterguard.io',
+    phone: user?.phone || '+91 99001 12233',
+    society: user?.communityName || user?.apartmentName || 'Registered Community',
+    societyCode: user?.communityCode || 'JS-COMM-01',
+    address: user?.address || 'Designated Community Premises',
     govId: 'AADHAAR-8921-4412-9012'
   });
 

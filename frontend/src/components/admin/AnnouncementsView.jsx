@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Megaphone, Plus, Bell, Send, CheckCircle2, Pin } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 
 export const AnnouncementsView = () => {
-  const { showToast } = useAuth();
+  const { user, showToast } = useAuth();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [priority, setPriority] = useState('NORMAL');
+  const [posting, setPosting] = useState(false);
 
   const [announcements, setAnnouncements] = useState([
     { id: 1, title: 'Annual Overhead Tank Deep Cleaning & Disinfection', body: 'The central overhead water tank will be isolated for bi-annual chemical disinfection on Sunday, Aug 31 from 9:00 AM to 1:00 PM. Please store adequate drinking water in advance.', priority: 'URGENT', postedBy: 'Society Secretary', date: '2026-08-27', isPinned: true },
@@ -14,24 +16,42 @@ export const AnnouncementsView = () => {
     { id: 3, title: 'Smart Sub-Meter Automated Leak Alert Calibration', body: 'Continuous night flow sensors (2 AM - 5 AM) are now actively triggering WhatsApp & SMS alert notifications for all residents.', priority: 'INFO', postedBy: 'Technical Team', date: '2026-08-01', isPinned: false },
   ]);
 
-  const handlePost = (e) => {
+  const handlePost = async (e) => {
     e.preventDefault();
     if (!title || !body) return;
 
+    setPosting(true);
+    const aptId = user?.communityId || user?.apartmentId || 1;
     const newPost = {
       id: Date.now(),
       title,
       body,
       priority,
-      postedBy: 'Society Admin',
+      postedBy: user?.name || 'Society Admin',
       date: new Date().toISOString().split('T')[0],
       isPinned: priority === 'URGENT'
     };
 
     setAnnouncements([newPost, ...announcements]);
+    const currentTitle = title;
+    const currentBody = body;
+    const currentPriority = priority;
     setTitle('');
     setBody('');
-    showToast('Society announcement published & broadcast to all 48 residents!', 'success');
+
+    try {
+      await api.createAnnouncement({
+        apartmentId: aptId,
+        title: currentTitle,
+        body: currentBody,
+        priority: currentPriority
+      });
+      showToast('Announcement published & broadcast via SMTP email to residents!', 'success');
+    } catch (err) {
+      showToast('Announcement published locally.', 'info');
+    } finally {
+      setPosting(false);
+    }
   };
 
   return (

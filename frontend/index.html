@@ -8,6 +8,54 @@
   </head>
   <body>
     <div id="root"></div>
+    <div id="google_translate_element" style="position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden;"></div>
+    <script type="text/javascript">
+      // Sync Google Translate cookie with localStorage wg_lang BEFORE Google Translate initializes
+      (function() {
+        try {
+          var saved = localStorage.getItem('wg_lang');
+          var isEn = !saved || saved === 'en' || saved === 'English' || saved === 'null' || saved === 'undefined';
+          var target = isEn ? '/en/en' : ('/en/' + encodeURIComponent(saved));
+          var domain = window.location.hostname;
+
+          // Clear any conflicting paths and domains
+          var paths = ['/', window.location.pathname];
+          var domains = ['', domain, '.' + domain];
+          for (var i = 0; i < domains.length; i++) {
+            for (var j = 0; j < paths.length; j++) {
+              var dStr = domains[i] ? '; domain=' + domains[i] : '';
+              document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=' + paths[j] + dStr;
+              document.cookie = 'googtrans=; Max-Age=0; path=' + paths[j] + dStr;
+            }
+          }
+
+          // Set clean, explicit googtrans cookie
+          document.cookie = 'googtrans=' + target + '; path=/;';
+          if (domain && domain !== 'localhost') {
+            document.cookie = 'googtrans=' + target + '; domain=.' + domain + '; path=/;';
+          // IMPORTANT: If English, DO NOT SET ANY googtrans COOKIE!
+          // Setting /en/en causes Google Translate to fall back to Abkhazian ('ab') because 'en' is the source pageLanguage!
+          if (!isEn) {
+            document.cookie = 'googtrans=/en/' + encodeURIComponent(saved) + '; path=/;';
+            if (domain && domain !== 'localhost') {
+              document.cookie = 'googtrans=/en/' + encodeURIComponent(saved) + '; domain=.' + domain + '; path=/;';
+            }
+          }
+        } catch (e) {
+          console.warn('Google translate pre-init cookie error:', e);
+        }
+      })();
+
+      window.googleTranslateElementInit = function() {
+        if (window.google && window.google.translate) {
+          new window.google.translate.TranslateElement({
+            pageLanguage: 'en',
+            autoDisplay: false
+          }, 'google_translate_element');
+        }
+      };
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

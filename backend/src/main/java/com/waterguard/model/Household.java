@@ -19,6 +19,7 @@ public class Household {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "apartment_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Apartment apartment;
 
     @Column(name = "flat_no", nullable = false, length = 50)

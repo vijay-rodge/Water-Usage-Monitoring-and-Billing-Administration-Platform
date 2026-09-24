@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { translations } from '../utils/translations';
+import { findLanguage, applyGoogleTranslate, clearGoogTransCookie } from '../utils/languagesList';
 
 const AuthContext = createContext();
 
@@ -9,11 +11,52 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState('admin'); // 'admin' or 'resident'
   const [adminTab, setAdminTab] = useState('tariff');
   const [residentTab, setResidentTab] = useState('profile');
-  const [language, setLanguage] = useState('English');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Persistent language (ISO code) and dark mode
+  const [language, setLanguageState] = useState(() => {
+    const saved = localStorage.getItem('wg_lang');
+    if (!saved || saved === 'null' || saved === 'undefined' || saved === 'en' || saved === 'English') {
+      return 'en';
+    }
+    return findLanguage(saved).code;
+  });
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('wg_theme');
+    if (saved) return saved === 'dark';
+    return false;
+  });
+
   const [notificationsCount, setNotificationsCount] = useState(2);
   const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Sync dark class on html root and persist
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('wg_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('wg_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  // Synchronize Google Translate on mount:
+  // If user changed to a language earlier (e.g. Tamil 'ta'), load that language.
+  // Otherwise, strictly enforce English 'en'.
+  // If English ('en'), wipe all googtrans cookies so Google Translate NEVER touches the page!
+  useEffect(() => {
+    const saved = localStorage.getItem('wg_lang');
+    const langObj = findLanguage(saved || 'en');
+    applyGoogleTranslate(langObj.code);
+    if (saved && saved !== 'en' && saved !== 'English' && saved !== 'null' && saved !== 'undefined') {
+      const langObj = findLanguage(saved);
+      applyGoogleTranslate(langObj.code);
+    } else {
+      clearGoogTransCookie();
+    }
+  }, []);
 
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
   const closeSidebar = () => setSidebarOpen(false);
@@ -136,9 +179,36 @@ export const AuthProvider = ({ children }) => {
     showToast('You have been logged out safely.', 'info');
   };
 
+  const t = (key, fallback = '') => {
+    const langObj = findLanguage(language);
+    const dict = translations[langObj.name] || translations[language] || translations.English;
+    if (dict && dict[key] !== undefined) {
+      return dict[key];
+    }
+    if (translations.English && translations.English[key] !== undefined) {
+      return translations.English[key];
+    }
+    return fallback || key;
+  };
+
+  const setLanguage = (langInput) => {
+    const langObj = findLanguage(langInput);
+    const code = langObj.code;
+    setLanguageState(code);
+    localStorage.setItem('wg_lang', code);
+    applyGoogleTranslate(code);
+    showToast(`Language set to ${langObj.name} (${langObj.native})`, 'info');
+  };
+
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    showToast(isDarkMode ? 'Switched to Light Theme' : 'Switched to Dark Mode', 'info');
+    setIsDarkMode(prev => {
+      const next = !prev;
+      const msg = next 
+        ? t('header.switchedDark', 'Switched to Dark Mode') 
+        : t('header.switchedLight', 'Switched to Light Theme');
+      showToast(msg, 'info');
+      return next;
+    });
   };
 
   return (
@@ -158,10 +228,8 @@ export const AuthProvider = ({ children }) => {
       residentTab,
       setResidentTab,
       language,
-      setLanguage: (lang) => {
-        setLanguage(lang);
-        showToast(`Language changed to ${lang}`, 'info');
-      },
+      setLanguage,
+      t,
       isDarkMode,
       toggleDarkMode,
       notificationsCount,

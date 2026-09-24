@@ -82,27 +82,27 @@ export const NotificationsView = () => {
               className={`p-5 rounded-3xl border transition flex items-start space-x-4 ${
                 !n.read
                   ? isCritical
-                    ? 'bg-red-50/50 border-red-200'
-                    : 'bg-blue-50/40 border-blue-200'
-                  : 'bg-white border-slate-200/80'
+                    ? 'bg-red-50/50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60'
+                    : 'bg-blue-50/40 dark:bg-slate-900 border-blue-200 dark:border-blue-900/60'
+                  : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800'
               }`}
             >
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold shrink-0 ${
                 isCritical
-                  ? 'bg-red-100 text-red-600'
+                  ? 'bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-300'
                   : isMedium
-                  ? 'bg-amber-100 text-amber-600'
-                  : 'bg-blue-100 text-blue-600'
+                  ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-300'
+                  : 'bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-cyan-300'
               }`}>
                 {isCritical ? <AlertTriangle className="w-5 h-5" /> : isMedium ? <AlertCircle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
               </div>
 
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-slate-900">{n.title}</h4>
-                  <span className="text-xs font-mono text-slate-400">{n.date}</span>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">{n.title}</h4>
+                  <span className="text-xs font-mono text-slate-400 dark:text-slate-500">{n.date}</span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">{n.message}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">{n.message}</p>
               </div>
             </div>
           );

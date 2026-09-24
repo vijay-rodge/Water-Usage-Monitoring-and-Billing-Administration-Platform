@@ -13,7 +13,7 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:jalsetu}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:vijay116}
+    password: ${DB_PASSWORD:}
     hikari:
       connection-timeout: 20000
       minimum-idle: 5
@@ -43,6 +43,22 @@ spring:
       write-dates-as-timestamps: false
       indent-output: true
 
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:rodgevijay1@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: false
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 ---
 # Alternative In-Memory H2 Profile for offline dev / unit testing
 spring:
@@ -66,5 +82,9 @@ spring:
 ---
 app:
   jwt:
-    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    secret: ${JWT_SECRET:}
     expiration-ms: ${JWT_EXPIRES_IN_MS:900000} # 15 minutes default
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-3.5-flash}

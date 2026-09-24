@@ -34,6 +34,7 @@ public class MeterReadingService {
     private final UserRepository userRepository;
     private final AlertRepository alertRepository;
     private final AnomalyDetectionService anomalyDetectionService;
+    private final EmailService emailService;
 
     @Transactional
     public MeterReadingDto.ReadingResponse recordManualReading(MeterReadingDto.ReadingSubmitRequest request, String userEmail) {
@@ -76,16 +77,28 @@ public class MeterReadingService {
         reading = meterReadingRepository.save(reading);
 
         if (anomalyResult.isAnomaly) {
+            String severity = anomalyResult.anomalyScore.compareTo(new BigDecimal("80.00")) >= 0 ? "CRITICAL" : "HIGH";
             alertRepository.save(Alert.builder()
                     .apartment(household.getApartment())
                     .household(household)
                     .title("Water Anomaly Flagged - Flat " + household.getFlatNo())
                     .message(anomalyResult.remarks)
                     .alertType(anomalyResult.anomalyType)
-                    .severity(anomalyResult.anomalyScore.compareTo(new BigDecimal("80.00")) >= 0 ? "CRITICAL" : "HIGH")
+                    .severity(severity)
                     .isRead(false)
                     .isResolved(false)
                     .build());
+
+            if (household.getOwnerEmail() != null && !household.getOwnerEmail().isBlank()) {
+                emailService.sendLeakAlertEmail(
+                        household.getOwnerEmail(),
+                        household.getOwnerName() != null ? household.getOwnerName() : "Resident",
+                        household.getFlatNo(),
+                        anomalyResult.anomalyType,
+                        severity,
+                        anomalyResult.remarks
+                );
+            }
         }
 
         return mapToResponse(reading);
@@ -164,6 +177,28 @@ public class MeterReadingService {
 
                     if (anomaly.isAnomaly) {
                         anomalies++;
+                        String severity = anomaly.anomalyScore.compareTo(new BigDecimal("80.00")) >= 0 ? "CRITICAL" : "HIGH";
+                        alertRepository.save(Alert.builder()
+                                .apartment(household.getApartment())
+                                .household(household)
+                                .title("Water Anomaly Flagged - Flat " + household.getFlatNo())
+                                .message(anomaly.remarks)
+                                .alertType(anomaly.anomalyType)
+                                .severity(severity)
+                                .isRead(false)
+                                .isResolved(false)
+                                .build());
+
+                        if (household.getOwnerEmail() != null && !household.getOwnerEmail().isBlank()) {
+                            emailService.sendLeakAlertEmail(
+                                    household.getOwnerEmail(),
+                                    household.getOwnerName() != null ? household.getOwnerName() : "Resident",
+                                    household.getFlatNo(),
+                                    anomaly.anomalyType,
+                                    severity,
+                                    anomaly.remarks
+                            );
+                        }
                     }
 
                     parsedRows.add(MeterReadingDto.CSVRowParsed.builder()

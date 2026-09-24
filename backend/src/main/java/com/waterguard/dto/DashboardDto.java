@@ -49,6 +49,8 @@ public class DashboardDto {
     public static class AdminDashboardSummary {
         private Long apartmentId;
         private String apartmentName;
+        private String apartmentCode;
+        private BigDecimal commonAreaSqft;
         private Integer totalHouseholds;
         private Integer activeHouseholds;
         private BigDecimal totalCommunityConsumptionLiters;
@@ -69,6 +71,9 @@ public class DashboardDto {
     public static class HouseholdWaterSummary {
         private Long householdId;
         private String flatNo;
+        private String blockWing;
+        private String bhkType;
+        private BigDecimal carpetAreaSqft;
         private String ownerName;
         private BigDecimal monthlyConsumptionLiters;
         private BigDecimal estimatedCost;

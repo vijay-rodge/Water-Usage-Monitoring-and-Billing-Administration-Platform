@@ -60,10 +60,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public Auth & Health Endpoints
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/error").permitAll()
+                .requestMatchers("/chat/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/tariff/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/apartments/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/dashboard/**").permitAll()
+                .requestMatchers("/alerts/**").permitAll()
+                .requestMatchers("/billing/**").permitAll()
                 // Role-restricted Administration Endpoints
                 .requestMatchers("/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN", "SUPER_ADMIN", "ROLE_SUPER_ADMIN")
                 .anyRequest().authenticated()

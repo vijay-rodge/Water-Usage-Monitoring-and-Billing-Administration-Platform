@@ -58,6 +58,7 @@ public class AuthDto {
         private String flatNo;
         private String wing;
         private String bhk;
+        @JsonAlias({"communityId", "societyId"})
         private Long apartmentId;
         private Long householdId;
         private String role; // "ADMIN" or "RESIDENT"

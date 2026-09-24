@@ -199,6 +199,44 @@ let mockState = {
 };
 
 export const api = {
+  // Get all registered communities for resident onboarding
+  getCommunities: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/communities`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch (e) {
+      console.warn('API /auth/communities call failed:', e);
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/apartments`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data.map(a => ({
+            id: a.id,
+            name: a.name,
+            code: a.code,
+            city: a.city || 'Bengaluru',
+            adminName: a.societyEmail ? a.societyEmail.split('@')[0] : 'Community Admin',
+            totalFlats: a.totalFlats
+          }));
+        }
+      }
+    } catch (e) {}
+
+    return [
+      { id: 1, name: 'Greenwoods Meadows Luxury Residency', city: 'Bengaluru', adminName: 'Dr. Arvind Mehra' }
+    ];
+  },
+
   // 1. Community & Resident Registration (PostgreSQL Transaction)
   register: async (regData) => {
     try {
@@ -334,19 +372,27 @@ export const api = {
   },
 
   // 5. Admin Resident Approval Workflow
-  getPendingResidents: async () => {
+  getPendingResidents: async (communityId) => {
     try {
-      const res = await fetch(`${API_BASE}/auth/pending-residents`, {
+      const url = communityId 
+        ? `${API_BASE}/auth/pending-residents?communityId=${communityId}`
+        : `${API_BASE}/auth/pending-residents`;
+      const res = await fetch(url, {
         credentials: 'include'
       });
       if (res.ok) return await res.json();
-    } catch (e) {}
+    } catch (e) {
+      console.warn('API getPendingResidents failed:', e);
+    }
     return [];
   },
 
-  approveResident: async (residentId) => {
+  approveResident: async (residentId, communityId) => {
     try {
-      const res = await fetch(`${API_BASE}/auth/approve-resident/${residentId}`, {
+      const url = communityId
+        ? `${API_BASE}/auth/approve-resident/${residentId}?communityId=${communityId}`
+        : `${API_BASE}/auth/approve-resident/${residentId}`;
+      const res = await fetch(url, {
         method: 'POST',
         credentials: 'include'
       });
@@ -359,9 +405,12 @@ export const api = {
     }
   },
 
-  rejectResident: async (residentId, reason = 'Declined by Administrator') => {
+  rejectResident: async (residentId, reason = 'Declined by Administrator', communityId) => {
     try {
-      const res = await fetch(`${API_BASE}/auth/reject-resident/${residentId}`, {
+      const url = communityId
+        ? `${API_BASE}/auth/reject-resident/${residentId}?communityId=${communityId}`
+        : `${API_BASE}/auth/reject-resident/${residentId}`;
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -373,6 +422,24 @@ export const api = {
     } catch (e) {
       if (e.message && !e.message.includes('fetch')) throw e;
       return { success: true, message: 'Resident request declined' };
+    }
+  },
+
+  deletePendingResident: async (residentId, communityId) => {
+    try {
+      const url = communityId
+        ? `${API_BASE}/auth/pending-residents/${residentId}?communityId=${communityId}`
+        : `${API_BASE}/auth/pending-residents/${residentId}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to delete resident request');
+    } catch (e) {
+      if (e.message && !e.message.includes('fetch')) throw e;
+      return { success: true, message: 'Resident request deleted' };
     }
   },
 
@@ -396,6 +463,18 @@ export const api = {
       if (res.ok) return await res.json();
     } catch (e) {}
     return mockState.adminDashboard;
+  },
+
+  getApartmentHouseholds: async (apartmentId = 1) => {
+    try {
+      const res = await fetch(`${API_BASE}/apartments/${apartmentId}/households`, {
+        credentials: 'include'
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Failed to fetch apartment households:', e);
+    }
+    return [];
   },
 
   submitManualReading: async (householdId, readingDate, currentReadingLiters, remarks) => {
@@ -476,6 +555,20 @@ export const api = {
   },
 
   payInvoice: async (invoiceId, paymentRef = `UPI-${Date.now()}`) => {
+    try {
+      const res = await fetch(`${API_BASE}/billing/invoices/${invoiceId}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ paymentReference: paymentRef })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, paymentReference: paymentRef, data };
+      }
+    } catch (e) {
+      console.warn('Backend payment record failed:', e);
+    }
     if (mockState.residentDashboard.latestInvoice && mockState.residentDashboard.latestInvoice.id === invoiceId) {
       mockState.residentDashboard.latestInvoice.paymentStatus = 'PAID';
       mockState.residentDashboard.latestInvoice.paymentDate = new Date().toLocaleString();
@@ -490,9 +583,49 @@ export const api = {
     return { success: true, paymentReference: paymentRef };
   },
 
+  createAnnouncement: async (announcementData) => {
+    try {
+      const res = await fetch(`${API_BASE}/alerts/announcements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(announcementData)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('API createAnnouncement failed:', e);
+    }
+    return { success: true, ...announcementData };
+  },
+
   resolveAlert: async (alertId) => {
     const alert = mockState.residentDashboard.recentAlerts.find(a => a.id === alertId);
     if (alert) alert.isResolved = true;
     return { success: true };
+  },
+
+  sendChatMessage: async (message, history = [], apiKey = '', model = 'gemini-1.5-flash', clientContext = {}) => {
+    const res = await fetch(`${API_BASE}/chat/assistant`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'X-Gemini-Api-Key': apiKey } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        message,
+        history,
+        apiKey: apiKey || undefined,
+        model: model || 'gemini-1.5-flash',
+        clientContext
+      })
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.reply || err.message || `HTTP ${res.status}: Failed to communicate with AI service`);
   }
 };

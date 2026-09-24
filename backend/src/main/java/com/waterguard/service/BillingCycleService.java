@@ -30,6 +30,7 @@ public class BillingCycleService {
     private final ApportionmentService apportionmentService;
     private final AlertRepository alertRepository;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
 
     @Transactional
     public BillingCycle generateBillingCycle(BillingDto.CreateCycleRequest request) {
@@ -107,6 +108,18 @@ public class BillingCycleService {
                     .build();
 
             invoiceRepository.save(invoice);
+
+            if (household.getOwnerEmail() != null && !household.getOwnerEmail().isBlank()) {
+                emailService.sendInvoiceGeneratedEmail(
+                        household.getOwnerEmail(),
+                        household.getOwnerName() != null ? household.getOwnerName() : "Resident",
+                        household.getFlatNo(),
+                        invoiceNo,
+                        cycle.getCycleName(),
+                        calc.getTotalPayable(),
+                        request.getDueDate()
+                );
+            }
         }
 
         cycle.setTotalMeteredConsumptionLiters(totalMeteredLiters);
@@ -135,6 +148,18 @@ public class BillingCycleService {
         invoice.setPaymentDate(LocalDateTime.now());
         invoice.setPaymentReference(paymentRef);
         invoice = invoiceRepository.save(invoice);
+
+        Household h = invoice.getHousehold();
+        if (h != null && h.getOwnerEmail() != null && !h.getOwnerEmail().isBlank()) {
+            emailService.sendPaymentReceiptEmail(
+                    h.getOwnerEmail(),
+                    h.getOwnerName() != null ? h.getOwnerName() : "Resident",
+                    h.getFlatNo(),
+                    invoice.getInvoiceNumber(),
+                    invoice.getTotalAmountDue(),
+                    paymentRef
+            );
+        }
 
         return mapToInvoiceResponse(invoice);
     }

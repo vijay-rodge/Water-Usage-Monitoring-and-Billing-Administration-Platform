@@ -37,12 +37,12 @@ function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] text-slate-800 antialiased font-sans">
+    <div className="flex h-screen overflow-hidden bg-[#f8fafc] dark:bg-[#0b1120] text-slate-800 dark:text-slate-100 antialiased font-sans transition-colors duration-200">
       {/* Fixed Left Sidebar with Router Navigation */}
       <Sidebar />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Area - Scrollable */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
         <TopHeader />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
@@ -83,7 +83,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Auth & Onboarding Routes */}
-          <Route path="/" element={<AuthRouteWrapper initialMode="register_community" />} />
+          <Route path="/" element={<AuthRouteWrapper initialMode="landing" />} />
           <Route path="/login" element={<AuthRouteWrapper initialMode="login" />} />
           <Route path="/register-community" element={<AuthRouteWrapper initialMode="register_community" />} />
           <Route path="/register-resident" element={<AuthRouteWrapper initialMode="register_resident" />} />
