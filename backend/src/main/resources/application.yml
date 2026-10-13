@@ -5,15 +5,15 @@ server:
 
 spring:
   application:
-    name: jalsetu-backend
+    name: your-db-name-backend
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:postgres}
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:jalsetu}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:your-db-name}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:your-db-password}
     hikari:
       connection-timeout: 20000
       minimum-idle: 5
@@ -46,8 +46,8 @@ spring:
   mail:
     host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME:rodgevijay1@gmail.com}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${SPRING_MAIL_USERNAME:your-email@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:your-app-password}
     properties:
       mail:
         smtp:
@@ -66,7 +66,7 @@ spring:
     activate:
       on-profile: h2
   datasource:
-    url: jdbc:h2:mem:jalsetu_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    url: jdbc:h2:mem:your-db-name;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
     driverClassName: org.h2.Driver
     username: sa
     password: 
@@ -82,9 +82,9 @@ spring:
 ---
 app:
   jwt:
-    secret: ${JWT_SECRET:}
+    secret: ${JWT_SECRET:your-secret-key}
     expiration-ms: ${JWT_EXPIRES_IN_MS:900000} # 15 minutes default
 
 gemini:
-  api-key: ${GEMINI_API_KEY:}
+  api-key: ${GEMINI_API_KEY:your-gemini-api-key}
   model: ${GEMINI_MODEL:gemini-3.5-flash}

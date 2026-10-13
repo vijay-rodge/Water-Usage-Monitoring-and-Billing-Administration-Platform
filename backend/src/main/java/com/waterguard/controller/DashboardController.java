@@ -24,3 +24,4 @@ public class DashboardController {
         return ResponseEntity.ok(dashboardService.getAdminDashboard(apartmentId));
     }
 }
+

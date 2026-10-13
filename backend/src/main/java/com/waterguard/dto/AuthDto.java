@@ -62,6 +62,11 @@ public class AuthDto {
         private Long apartmentId;
         private Long householdId;
         private String role; // "ADMIN" or "RESIDENT"
+
+        // Document Verification
+        private String documentType;
+        private String documentName;
+        private String documentData;
     }
 
     @Data
@@ -80,6 +85,16 @@ public class AuthDto {
         private String communityName;
         private Long householdId;
         private String flatNo;
+
+        // Document Verification Fields
+        private String documentType;
+        private String documentName;
+        private String documentData;
+        private LocalDateTime documentUploadedAt;
+        private String documentVerificationStatus;
+        private String documentRejectionReason;
+        private String verifiedByAdminName;
+        private LocalDateTime verifiedAt;
     }
 
     @Data
@@ -125,6 +140,35 @@ public class AuthDto {
         private String apartmentName;
         private String approvalStatus;
         private LocalDateTime requestedAt;
+
+        // Document Verification Fields
+        private String documentType;
+        private String documentName;
+        private String documentData;
+        private LocalDateTime documentUploadedAt;
+        private String documentVerificationStatus;
+        private String documentRejectionReason;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DocumentUploadRequest {
+        private Long userId;
+        private String documentType;
+        private String documentName;
+        private String documentData; // Base64 data URL
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DocumentVerificationRequest {
+        private Long residentId;
+        private String status; // VERIFIED or REJECTED
+        private String reason; // Rejection or review note
     }
 
     @Data

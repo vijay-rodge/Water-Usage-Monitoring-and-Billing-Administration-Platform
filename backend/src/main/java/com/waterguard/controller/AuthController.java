@@ -140,4 +140,43 @@ public class AuthController {
         AuthDto.MessageResponse response = authService.deletePendingResident(residentId, targetCommunityId);
         return ResponseEntity.ok(response);
     }
+
+    // =========================================================================
+    // DOCUMENT VERIFICATION ENDPOINTS
+    // =========================================================================
+
+    @PostMapping("/upload-verification-document")
+    public ResponseEntity<AuthDto.UserSummary> uploadVerificationDocument(
+            @RequestBody AuthDto.DocumentUploadRequest req,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        String email = principal != null ? principal.getUsername() : null;
+        Long userId = principal != null ? principal.getUserId() : req.getUserId();
+        AuthDto.UserSummary updated = authService.uploadVerificationDocument(userId, email, req);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/verify-document/{residentId}")
+    public ResponseEntity<AuthDto.PendingResidentDto> verifyDocument(
+            @PathVariable Long residentId,
+            @RequestBody AuthDto.DocumentVerificationRequest req,
+            @RequestParam(required = false) Long communityId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long targetCommunityId = communityId != null ? communityId : (principal != null && principal.getCommunityId() != null ? principal.getCommunityId() : 1L);
+        String adminName = principal != null ? principal.getFullName() : "Community Administrator";
+        req.setResidentId(residentId);
+        AuthDto.PendingResidentDto result = authService.verifyResidentDocument(residentId, targetCommunityId, adminName, req);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/resident-documents")
+    public ResponseEntity<List<AuthDto.PendingResidentDto>> getResidentDocuments(
+            @RequestParam(required = false) Long communityId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long targetCommunityId = communityId != null ? communityId : (principal != null && principal.getCommunityId() != null ? principal.getCommunityId() : 1L);
+        List<AuthDto.PendingResidentDto> list = authService.getAllCommunityResidentDocuments(targetCommunityId);
+        return ResponseEntity.ok(list);
+    }
 }

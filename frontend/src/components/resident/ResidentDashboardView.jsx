@@ -18,6 +18,8 @@ import { SharedCostApportionmentCard } from '../SharedCostApportionmentCard';
 import { AnomalyAlertBanner } from '../AnomalyAlertBanner';
 import { InvoiceModal } from '../InvoiceModal';
 import { ManualReadingModal } from '../ManualReadingModal';
+import { ResidentDocumentVerificationCard } from './ResidentDocumentVerificationCard';
+import { PersonalizedWaterTips } from './PersonalizedWaterTips';
 import { useAuth } from '../../context/AuthContext';
 
 export const ResidentDashboardView = () => {
@@ -98,6 +100,9 @@ export const ResidentDashboardView = () => {
         </div>
       </div>
 
+      {/* Flat Ownership Document Verification Card */}
+      <ResidentDocumentVerificationCard onUpdated={loadData} />
+
       {/* Anomaly Alerts */}
       {data.recentAlerts && data.recentAlerts.length > 0 && (
         <AnomalyAlertBanner alerts={data.recentAlerts} />
@@ -171,6 +176,9 @@ export const ResidentDashboardView = () => {
           </div>
         </div>
       </div>
+
+      {/* Personalized AI Water-Saving Tips (Independent Asynchronous Loading) */}
+      <PersonalizedWaterTips householdId={data.householdId || 1} flatNo={data.flatNo || 'A-101'} />
 
       {/* Telemetry Chart */}
       <WaterUsageChart data={data.dailyTrends} threshold={750} title="Flat A-101 — Daily Smart Meter Reading Log" />

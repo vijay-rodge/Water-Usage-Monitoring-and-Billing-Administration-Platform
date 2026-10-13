@@ -40,6 +40,55 @@ public class DashboardDto {
         private List<BillingDto.TierBreakdownItem> estimatedTierBreakdown;
         private BillingDto.InvoiceResponse latestInvoice;
         private List<AlertDto> recentAlerts;
+        private ResidentWaterTipsResponse aiWaterTips;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class WaterTipItem {
+        private String id;
+        private String category;
+        private String title;
+        private String message;
+        private String description;
+        private String potentialSavings;
+        private String priority;
+        private String iconType;
+
+        public String getMessage() {
+            return message != null ? message : description;
+        }
+
+        public String getDescription() {
+            return description != null ? description : message;
+        }
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ResidentWaterTipsResponse {
+        @Builder.Default
+        private Boolean success = true;
+        @Builder.Default
+        private String source = "gemini"; // "gemini", "cache", "fallback"
+        private Long householdId;
+        private String flatNo;
+        private String residentName;
+        private String headline;
+        private String consumptionSummary;
+        private String potentialMonthlySavingsEstimate;
+        private List<WaterTipItem> tips;
+        private String generatedBy;
+        private String generatedAt;
+        private String trend; // "increasing", "decreasing", "stable"
+        private BigDecimal percentageChange;
+        private BigDecimal currentMonthUsage;
+        private BigDecimal previousMonthUsage;
+        private BigDecimal averageMonthlyUsage;
     }
 
     @Data

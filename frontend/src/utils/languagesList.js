@@ -170,12 +170,19 @@ export const applyGoogleTranslate = (langCode) => {
   if (isEn) {
     clearGoogTransCookie();
     const select = document.querySelector('.goog-te-combo');
-    if (select && select.value) {
+    if (select) {
       select.value = '';
-      select.dispatchEvent(new Event('change'));
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // If the DOM was translated, reload to cleanly restore original English
+    if (
+      document.documentElement.classList.contains('translated-ltr') ||
+      document.documentElement.classList.contains('translated-rtl') ||
+      document.cookie.includes('googtrans')
+    ) {
       setTimeout(() => {
         window.location.reload();
-      }, 50);
+      }, 100);
     }
     return;
   }
@@ -191,8 +198,21 @@ export const applyGoogleTranslate = (langCode) => {
   const triggerSelect = () => {
     const select = document.querySelector('.goog-te-combo');
     if (select) {
-      select.value = code;
-      select.dispatchEvent(new Event('change'));
+      let matchedIndex = -1;
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value.toLowerCase() === code.toLowerCase()) {
+          matchedIndex = i;
+          break;
+        }
+      }
+      if (matchedIndex !== -1) {
+        select.selectedIndex = matchedIndex;
+        select.value = select.options[matchedIndex].value;
+      } else {
+        select.value = code;
+      }
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      select.dispatchEvent(new Event('input', { bubbles: true }));
       return true;
     }
     return false;
@@ -202,9 +222,15 @@ export const applyGoogleTranslate = (langCode) => {
     let attempts = 0;
     const interval = setInterval(() => {
       attempts++;
-      if (triggerSelect() || attempts >= 25) {
+      if (triggerSelect()) {
         clearInterval(interval);
+      } else if (attempts >= 20) {
+        clearInterval(interval);
+        // If Google Translate combo is still not in DOM, reload to let the set cookie trigger translation
+        if (!document.querySelector('.goog-te-combo')) {
+          window.location.reload();
+        }
       }
-    }, 200);
+    }, 150);
   }
 };

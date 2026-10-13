@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/tariff/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/apartments/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/dashboard/**").permitAll()
+                .requestMatchers("/resident/water-tips/**").permitAll()
                 .requestMatchers("/alerts/**").permitAll()
                 .requestMatchers("/billing/**").permitAll()
                 // Role-restricted Administration Endpoints

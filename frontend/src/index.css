@@ -172,21 +172,36 @@
    ========================================================= */
 .goog-te-banner-frame,
 .goog-te-banner-frame.skiptranslate,
-iframe.goog-te-banner-frame {
+iframe.goog-te-banner-frame,
+iframe.skiptranslate,
+body > .skiptranslate,
+body > iframe.skiptranslate,
+body > iframe[id*="container"],
+body > div[id*="container"] {
   display: none !important;
   visibility: hidden !important;
-  height: 0 !important;
-  width: 0 !important;
+  height: 0px !important;
+  width: 0px !important;
+  opacity: 0 !important;
   border: none !important;
+  pointer-events: none !important;
 }
 
-body {
+body,
+html,
+html body,
+body.translated-ltr,
+body.translated-rtl {
   top: 0px !important;
+  margin-top: 0px !important;
   position: static !important;
 }
 
 #goog-gt-tt,
-.goog-te-balloon-frame {
+#goog-gt-vt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
   display: none !important;
   visibility: hidden !important;
 }
@@ -197,10 +212,7 @@ body {
 }
 
 .goog-te-gadget {
-  display: none !important;
-}
-
-.skiptranslate > iframe {
-  display: none !important;
+  font-size: 0px !important;
+  color: transparent !important;
 }
 

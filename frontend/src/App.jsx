@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { OfflineIndicator } from './components/pwa/OfflineIndicator';
+import { InstallAppModal } from './components/pwa/InstallAppModal';
+import { ServiceWorkerUpdateToast } from './components/pwa/ServiceWorkerUpdateToast';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopHeader } from './components/layout/TopHeader';
 import { FloatingAssistant } from './components/layout/FloatingAssistant';
@@ -19,6 +22,7 @@ import { AdminSupportView } from './components/admin/AdminSupportView';
 import { TariffPlanConfigView } from './components/admin/TariffPlanConfigView';
 import { AnnouncementsView } from './components/admin/AnnouncementsView';
 import { AdminProfileView } from './components/admin/AdminProfileView';
+import { AdminDocumentApprovalsView } from './components/admin/AdminDocumentApprovalsView';
 
 // Resident Views
 import { ResidentDashboardView } from './components/resident/ResidentDashboardView';
@@ -28,6 +32,7 @@ import { ResidentReportsView } from './components/resident/ResidentReportsView';
 import { SupportConcernsView } from './components/resident/SupportConcernsView';
 import { NotificationsView } from './components/resident/NotificationsView';
 import { ResidentProfileView } from './components/resident/ResidentProfileView';
+import { ResidentDocumentVerificationView } from './components/resident/ResidentDocumentVerificationView';
 
 function AppLayout() {
   const { isAuthenticated, toast, closeToast } = useAuth();
@@ -80,6 +85,11 @@ function AuthRouteWrapper({ initialMode = 'login' }) {
 export function App() {
   return (
     <AuthProvider>
+      {/* PWA Utility Banners & Modals */}
+      <OfflineIndicator />
+      <InstallAppModal />
+      <ServiceWorkerUpdateToast />
+
       <BrowserRouter>
         <Routes>
           {/* Public Auth & Onboarding Routes */}
@@ -94,6 +104,7 @@ export function App() {
             <Route path="/admin" element={<Navigate to="/admin/tariff" replace />} />
             <Route path="/admin/tariff" element={<TariffPlanConfigView />} />
             <Route path="/admin/dashboard" element={<AdminDashboardView />} />
+            <Route path="/admin/verification" element={<AdminDocumentApprovalsView />} />
             <Route path="/admin/households" element={<HouseholdsDirectory />} />
             <Route path="/admin/readings" element={<MeterReadingsView />} />
             <Route path="/admin/billing" element={<BillingManagement />} />
@@ -107,6 +118,7 @@ export function App() {
             {/* Resident Section Routes */}
             <Route path="/resident" element={<Navigate to="/resident/profile" replace />} />
             <Route path="/resident/profile" element={<ResidentProfileView />} />
+            <Route path="/resident/verification" element={<ResidentDocumentVerificationView />} />
             <Route path="/resident/dashboard" element={<ResidentDashboardView />} />
             <Route path="/resident/history" element={<UsageHistoryView />} />
             <Route path="/resident/bills" element={<MyBillsView />} />

@@ -3,6 +3,7 @@ import { Globe, Moon, Sun, ChevronDown, User, Shield, RefreshCw, Menu, Search, C
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ALL_LANGUAGES, findLanguage } from '../../utils/languagesList';
+import { InstallButton } from '../pwa/InstallButton';
 
 export const TopHeader = () => {
   const { 
@@ -226,6 +227,9 @@ export const TopHeader = () => {
             </div>
           )}
         </div>
+
+        {/* PWA App Install Button */}
+        <InstallButton variant="compact" />
 
         {/* Theme Toggle */}
         <button

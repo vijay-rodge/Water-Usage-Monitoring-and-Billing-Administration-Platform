@@ -1,10 +1,64 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#0284c7" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="AquaFlow Smart Water Platform - Real-time community water telemetry, IoT metering, automated billing, and leak detection." />
+
+    <!-- Mobile & PWA Capabilities -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AquaFlow" />
+    <meta name="application-name" content="AquaFlow" />
+    <meta name="msapplication-TileColor" content="#0284c7" />
+    <meta name="msapplication-TileImage" content="/icons/icon-192x192.png" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
     <title>AquaFlow - Smart Water Telemetry &amp; Billing Platform</title>
+    <style>
+      /* Suppress Google Translate Top Banner Navbar & Body Offset */
+      .goog-te-banner-frame,
+      .goog-te-banner-frame.skiptranslate,
+      iframe.goog-te-banner-frame,
+      iframe.skiptranslate,
+      body > .skiptranslate,
+      body > iframe.skiptranslate,
+      body > iframe[id*="container"],
+      body > div[id*="container"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        width: 0px !important;
+        opacity: 0 !important;
+        border: none !important;
+        pointer-events: none !important;
+      }
+
+      body, html, html body, body.translated-ltr, body.translated-rtl {
+        top: 0px !important;
+        margin-top: 0px !important;
+        position: static !important;
+      }
+
+      #goog-gt-tt, #goog-gt-vt, .goog-te-balloon-frame, .goog-tooltip {
+        display: none !important;
+        visibility: hidden !important;
+      }
+
+      .goog-text-highlight {
+        background: none !important;
+        box-shadow: none !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
@@ -15,12 +69,14 @@
         try {
           var saved = localStorage.getItem('wg_lang');
           var isEn = !saved || saved === 'en' || saved === 'English' || saved === 'null' || saved === 'undefined';
-          var target = isEn ? '/en/en' : ('/en/' + encodeURIComponent(saved));
           var domain = window.location.hostname;
 
           // Clear any conflicting paths and domains
           var paths = ['/', window.location.pathname];
-          var domains = ['', domain, '.' + domain];
+          var domains = ['', domain];
+          if (domain && domain !== 'localhost') {
+            domains.push('.' + domain);
+          }
           for (var i = 0; i < domains.length; i++) {
             for (var j = 0; j < paths.length; j++) {
               var dStr = domains[i] ? '; domain=' + domains[i] : '';
@@ -29,16 +85,12 @@
             }
           }
 
-          // Set clean, explicit googtrans cookie
-          document.cookie = 'googtrans=' + target + '; path=/;';
-          if (domain && domain !== 'localhost') {
-            document.cookie = 'googtrans=' + target + '; domain=.' + domain + '; path=/;';
-          // IMPORTANT: If English, DO NOT SET ANY googtrans COOKIE!
-          // Setting /en/en causes Google Translate to fall back to Abkhazian ('ab') because 'en' is the source pageLanguage!
+          // If a non-English language was saved by user, set the googtrans cookie so Google Translate translates on load
           if (!isEn) {
-            document.cookie = 'googtrans=/en/' + encodeURIComponent(saved) + '; path=/;';
+            var target = '/en/' + encodeURIComponent(saved);
+            document.cookie = 'googtrans=' + target + '; path=/;';
             if (domain && domain !== 'localhost') {
-              document.cookie = 'googtrans=/en/' + encodeURIComponent(saved) + '; domain=.' + domain + '; path=/;';
+              document.cookie = 'googtrans=' + target + '; domain=.' + domain + '; path=/;';
             }
           }
         } catch (e) {
@@ -46,12 +98,36 @@
         }
       })();
 
+      // Active observer to suppress Google Translate inline body offset and banner
+      try {
+        var cleanTranslateUI = function() {
+          if (document.body && document.body.style.top && document.body.style.top !== '0px') {
+            document.body.style.top = '0px';
+          }
+          var banners = document.querySelectorAll('body > .skiptranslate, body > iframe.skiptranslate, .goog-te-banner-frame');
+          for (var i = 0; i < banners.length; i++) {
+            banners[i].style.setProperty('display', 'none', 'important');
+            banners[i].style.setProperty('visibility', 'hidden', 'important');
+            banners[i].style.setProperty('height', '0px', 'important');
+          }
+        };
+
+        if (window.MutationObserver) {
+          var observer = new MutationObserver(cleanTranslateUI);
+          observer.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['style', 'class'] });
+        }
+      } catch (e) {}
+
       window.googleTranslateElementInit = function() {
-        if (window.google && window.google.translate) {
-          new window.google.translate.TranslateElement({
-            pageLanguage: 'en',
-            autoDisplay: false
-          }, 'google_translate_element');
+        try {
+          if (window.google && window.google.translate) {
+            new window.google.translate.TranslateElement({
+              pageLanguage: 'en',
+              autoDisplay: false
+            }, 'google_translate_element');
+          }
+        } catch (err) {
+          console.error('Error in googleTranslateElementInit:', err);
         }
       };
     </script>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Camera, Edit3, User, Mail, Phone, Calendar, Shield, Save, X, CheckCircle2 } from 'lucide-react';
+import { ResidentDocumentVerificationCard } from './ResidentDocumentVerificationCard';
 import { useAuth } from '../../context/AuthContext';
 
 export const ResidentProfileView = () => {
@@ -153,6 +154,14 @@ export const ResidentProfileView = () => {
           <div className="text-sm font-bold text-slate-800 pt-1 font-mono">{formData.govId}</div>
         </div>
       </div>
+
+      {/* Residence Document Verification Card */}
+      <ResidentDocumentVerificationCard 
+        user={user} 
+        onStatusChange={(updated) => {
+          if (updated) setUser(updated);
+        }} 
+      />
 
       {/* Edit Profile Modal */}
       {isEditing && (

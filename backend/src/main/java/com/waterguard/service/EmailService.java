@@ -267,8 +267,191 @@ public class EmailService {
     }
 
     // =========================================================================
-    // CORE HTML EMAIL DISPATCH & ROBUST FALLBACK
+    // 9. RESIDENT DOCUMENT VERIFICATION ALERT TO COMMUNITY ADMIN
     // =========================================================================
+    @Async
+    public void sendDocumentVerificationAlertToAdmin(
+            String adminEmail,
+            String adminName,
+            String residentName,
+            String residentEmail,
+            String residentPhone,
+            String flatNo,
+            String blockWing,
+            String documentType,
+            String documentName,
+            String documentData,
+            String communityName
+    ) {
+        String docTypeLabel = switch (documentType != null ? documentType : "") {
+            case "ELECTRICITY_BILL" -> "Electricity Bill (Power Board)";
+            case "RENTAL_AGREEMENT" -> "Rental / Tenancy Agreement";
+            case "SALE_DEED" -> "Property Tax / Sale Deed";
+            case "GOVERNMENT_ID" -> "Government ID Proof";
+            default -> "Proof of Residency Document";
+        };
+
+        String subject = "📑 New Document Verification: Flat " + flatNo + " (" + residentName + ") uploaded " + docTypeLabel;
+        String cleanFileName = (documentName != null && !documentName.isBlank()) ? documentName : "Verification_Document.png";
+        
+        String attachmentBadge = (documentData != null && !documentData.isBlank())
+                ? "  <p style='margin:4px 0;'><strong>📎 Attached Document File:</strong> <span style='background:#fef08a; color:#854d0e; padding:3px 8px; border-radius:4px; font-weight:bold;'>Attached directly to this email (" + cleanFileName + ")</span></p>"
+                : "";
+
+        String html = buildEmailLayout(
+                "Resident Document Verification Request",
+                "Hello " + (adminName != null ? adminName : "Community Administrator") + ",",
+                "<p>A resident in <strong>" + communityName + "</strong> has submitted a residency proof document for manual review and approval.</p>" +
+                "<div style='background-color:#f0f9ff; border:1px solid #bae6fd; padding:16px; border-radius:12px; margin:20px 0;'>" +
+                "  <h4 style='margin:0 0 10px 0; color:#0369a1;'>Document Submission Details</h4>" +
+                "  <p style='margin:4px 0;'><strong>Resident Name:</strong> " + residentName + "</p>" +
+                "  <p style='margin:4px 0;'><strong>Assigned Unit:</strong> <span style='background:#e0f2fe; padding:2px 8px; border-radius:4px; font-weight:bold;'>Flat " + flatNo + " (" + (blockWing != null ? blockWing : "Wing A") + ")</span></p>" +
+                "  <p style='margin:4px 0;'><strong>Document Category:</strong> <strong>" + docTypeLabel + "</strong></p>" +
+                "  <p style='margin:4px 0;'><strong>File Name:</strong> <span style='font-family:monospace;'>" + cleanFileName + "</span></p>" +
+                attachmentBadge +
+                "  <p style='margin:4px 0;'><strong>Resident Email:</strong> <a href='mailto:" + residentEmail + "'>" + residentEmail + "</a></p>" +
+                "  <p style='margin:4px 0;'><strong>Resident Phone:</strong> " + (residentPhone != null ? residentPhone : "N/A") + "</p>" +
+                "  <p style='margin:4px 0;'><strong>Submission Time:</strong> " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")) + "</p>" +
+                "</div>" +
+                "<p>The resident's proof document is directly attached to this email (mobile compatible image format), and you can also inspect it with zoom and fullscreen controls in the Admin Portal.</p>" +
+                "<p style='text-align:center; margin-top:25px;'>" +
+                "  <a href='http://localhost:5173/admin/verification' style='background-color:#0284c7; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:8px; font-weight:bold; display:inline-block;'>Inspect & Verify Document in Portal</a>" +
+                "</p>"
+        );
+
+        if (documentData != null && !documentData.isBlank()) {
+            sendHtmlEmailWithAttachment(adminEmail, subject, html, cleanFileName, documentData);
+        } else {
+            sendHtmlEmail(adminEmail, subject, html);
+        }
+    }
+
+    public void sendDocumentVerificationAlertToAdmin(
+            String adminEmail,
+            String adminName,
+            String residentName,
+            String residentEmail,
+            String residentPhone,
+            String flatNo,
+            String blockWing,
+            String documentType,
+            String documentName,
+            String communityName
+    ) {
+        sendDocumentVerificationAlertToAdmin(
+                adminEmail, adminName, residentName, residentEmail, residentPhone,
+                flatNo, blockWing, documentType, documentName, null, communityName
+        );
+    }
+
+    // =========================================================================
+    // 10. DOCUMENT VERIFICATION RESULT NOTIFICATION TO RESIDENT
+    // =========================================================================
+    @Async
+    public void sendDocumentVerificationResultToResident(
+            String residentEmail,
+            String residentName,
+            String flatNo,
+            String communityName,
+            boolean isApproved,
+            String rejectionReason
+    ) {
+        if (isApproved) {
+            String subject = "✅ Document Verified! Flat " + flatNo + " residency approved at " + communityName;
+            String html = buildEmailLayout(
+                    "Residency Document Verified",
+                    "Hello " + residentName + ",",
+                    "<p>Your proof of residency document for <strong>Flat " + flatNo + "</strong> at <strong>" + communityName + "</strong> has been inspected and <strong>verified</strong> by your community administrator.</p>" +
+                    "<div style='background-color:#ecfdf5; border:1px solid #a7f3d0; padding:15px; border-radius:12px; margin:20px 0;'>" +
+                    "  <p style='margin:4px 0;'><strong>Status:</strong> <span style='color:#059669; font-weight:bold;'>VERIFIED RESIDENT</span></p>" +
+                    "  <p style='margin:4px 0;'><strong>Unit:</strong> Flat " + flatNo + " (" + communityName + ")</p>" +
+                    "  <p style='margin:4px 0;'>Your verified occupancy status is now recorded in the community directory.</p>" +
+                    "</div>" +
+                    "<p style='text-align:center; margin-top:25px;'>" +
+                    "  <a href='http://localhost:5173/resident/dashboard' style='background-color:#10b981; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:8px; font-weight:bold; display:inline-block;'>Open Resident Dashboard</a>" +
+                    "</p>"
+            );
+            sendHtmlEmail(residentEmail, subject, html);
+        } else {
+            String subject = "⚠️ Document Verification Update: Action Required for Flat " + flatNo;
+            String html = buildEmailLayout(
+                    "Document Verification Needs Attention",
+                    "Hello " + residentName + ",",
+                    "<p>Your uploaded residency proof document for <strong>Flat " + flatNo + "</strong> at <strong>" + communityName + "</strong> could not be verified by the administrator.</p>" +
+                    "<div style='background-color:#fef2f2; border:1px solid #fecaca; padding:15px; border-radius:12px; margin:20px 0;'>" +
+                    "  <h4 style='margin:0 0 8px 0; color:#991b1b;'>Administrator Feedback Note</h4>" +
+                    "  <p style='margin:4px 0; color:#b91c1c; font-weight:bold;'>" + (rejectionReason != null && !rejectionReason.isBlank() ? rejectionReason : "Document details could not be validated against flat records.") + "</p>" +
+                    "</div>" +
+                    "<p>Please log in and re-upload a clear copy (electricity bill, lease deed, or tax receipt) showing your flat number and name.</p>" +
+                    "<p style='text-align:center; margin-top:25px;'>" +
+                    "  <a href='http://localhost:5173/resident/verification' style='background-color:#dc2626; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:8px; font-weight:bold; display:inline-block;'>Re-upload Document</a>" +
+                    "</p>"
+            );
+            sendHtmlEmail(residentEmail, subject, html);
+        }
+    }
+
+    // =========================================================================
+    // CORE HTML EMAIL DISPATCH & ROBUST FALLBACK (WITH ATTACHMENT)
+    // =========================================================================
+    public void sendHtmlEmailWithAttachment(String to, String subject, String htmlContent, String attachmentName, String documentData) {
+        if (to == null || to.isBlank() || to.contains("example.com")) {
+            log.info("[SMTP MOCK] Email skipped for dummy/example recipient: {}", to);
+            return;
+        }
+
+        try {
+            if (mailSender != null) {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                helper.setFrom(fromEmail);
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(htmlContent, true);
+
+                if (documentData != null && !documentData.isBlank()) {
+                    try {
+                        String base64Data = documentData;
+                        String contentType = "image/png"; // default standard mobile compatible image
+                        if (documentData.contains(",")) {
+                            String[] parts = documentData.split(",", 2);
+                            String header = parts[0];
+                            base64Data = parts[1];
+                            if (header.contains(":") && header.contains(";")) {
+                                contentType = header.substring(header.indexOf(":") + 1, header.indexOf(";"));
+                            }
+                        }
+                        byte[] fileBytes = java.util.Base64.getDecoder().decode(base64Data.replaceAll("\\s+", ""));
+                        String cleanFileName = (attachmentName != null && !attachmentName.isBlank()) 
+                                ? attachmentName.replaceAll("[^a-zA-Z0-9._-]", "_") 
+                                : "Residency_Document.png";
+                        helper.addAttachment(cleanFileName, new org.springframework.core.io.ByteArrayResource(fileBytes), contentType);
+                        log.info("Attached mobile-compatible document '{}' ({} bytes, MIME: {}) to admin verification email", cleanFileName, fileBytes.length, contentType);
+                    } catch (Exception ex) {
+                        log.warn("Failed to attach document to email (dispatching without attachment): {}", ex.getMessage());
+                    }
+                }
+
+                mailSender.send(message);
+                log.info("[SMTP SUCCESS] Dispatched email with attachment to '{}' | Subject: '{}' | Host: '{}'", to, subject, mailHost);
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("[SMTP DISPATCH NOTICE] Mail server connection to '{}' could not be completed ({}). Emulating local email delivery.", mailHost, e.getMessage());
+        }
+
+        log.info("""
+                ================================================================================
+                [SMTP EMAIL NOTIFICATION PREVIEW (WITH ATTACHMENT: {})]
+                To: {}
+                From: {}
+                Host: {}
+                Subject: {}
+                Status: DISPATCHED VIA AQUAFLOW NOTIFICATION PIPELINE
+                ================================================================================
+                """, attachmentName, to, fromEmail, mailHost, subject);
+    }
+
     public void sendHtmlEmail(String to, String subject, String htmlContent) {
         if (to == null || to.isBlank() || to.contains("example.com")) {
             log.info("[SMTP MOCK] Email skipped for dummy/example recipient: {}", to);

@@ -48,8 +48,6 @@ export const AuthProvider = ({ children }) => {
   // If English ('en'), wipe all googtrans cookies so Google Translate NEVER touches the page!
   useEffect(() => {
     const saved = localStorage.getItem('wg_lang');
-    const langObj = findLanguage(saved || 'en');
-    applyGoogleTranslate(langObj.code);
     if (saved && saved !== 'en' && saved !== 'English' && saved !== 'null' && saved !== 'undefined') {
       const langObj = findLanguage(saved);
       applyGoogleTranslate(langObj.code);

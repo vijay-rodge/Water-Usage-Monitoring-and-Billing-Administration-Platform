@@ -372,8 +372,41 @@ public class AuthService {
                 .apartmentName(u.getApartment() != null ? u.getApartment().getName() : "")
                 .approvalStatus(u.getApprovalStatus())
                 .requestedAt(u.getCreatedAt())
+                .documentType(u.getDocumentType())
+                .documentName(u.getDocumentName())
+                .documentData(u.getDocumentData())
+                .documentUploadedAt(u.getDocumentUploadedAt())
+                .documentVerificationStatus(u.getDocumentVerificationStatus() != null ? u.getDocumentVerificationStatus() : "NOT_SUBMITTED")
+                .documentRejectionReason(u.getDocumentRejectionReason())
                 .build()
         ).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<AuthDto.PendingResidentDto> getAllCommunityResidentDocuments(Long adminCommunityId) {
+        List<User> users = userRepository.findByApartmentId(adminCommunityId);
+        return users.stream()
+                .filter(u -> !"ADMIN".equalsIgnoreCase(u.getRole()) && !"ROLE_ADMIN".equalsIgnoreCase(u.getRole()))
+                .map(u -> AuthDto.PendingResidentDto.builder()
+                        .id(u.getId())
+                        .fullName(u.getFullName())
+                        .email(u.getEmail())
+                        .phone(u.getPhone())
+                        .flatNo(u.getHousehold() != null ? u.getHousehold().getFlatNo() : "N/A")
+                        .blockWing(u.getHousehold() != null ? u.getHousehold().getBlockWing() : "Wing A")
+                        .householdId(u.getHousehold() != null ? u.getHousehold().getId() : null)
+                        .apartmentId(u.getApartment() != null ? u.getApartment().getId() : null)
+                        .apartmentName(u.getApartment() != null ? u.getApartment().getName() : "")
+                        .approvalStatus(u.getApprovalStatus())
+                        .requestedAt(u.getCreatedAt())
+                        .documentType(u.getDocumentType())
+                        .documentName(u.getDocumentName())
+                        .documentData(u.getDocumentData())
+                        .documentUploadedAt(u.getDocumentUploadedAt())
+                        .documentVerificationStatus(u.getDocumentVerificationStatus() != null ? u.getDocumentVerificationStatus() : "NOT_SUBMITTED")
+                        .documentRejectionReason(u.getDocumentRejectionReason())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -422,6 +455,163 @@ public class AuthService {
                 .communityName(communityName)
                 .householdId(householdId)
                 .flatNo(flatNo)
+                .documentType(user.getDocumentType())
+                .documentName(user.getDocumentName())
+                .documentData(user.getDocumentData())
+                .documentUploadedAt(user.getDocumentUploadedAt())
+                .documentVerificationStatus(user.getDocumentVerificationStatus() != null ? user.getDocumentVerificationStatus() : "NOT_SUBMITTED")
+                .documentRejectionReason(user.getDocumentRejectionReason())
+                .verifiedByAdminName(user.getVerifiedByAdminName())
+                .verifiedAt(user.getVerifiedAt())
+                .build();
+    }
+
+    // =========================================================================
+    // DOCUMENT VERIFICATION METHODS
+    // =========================================================================
+
+    @Transactional
+    public AuthDto.UserSummary uploadVerificationDocument(Long userId, String email, AuthDto.DocumentUploadRequest req) {
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId).orElse(null);
+        }
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email).orElse(null);
+        }
+        if (user == null) {
+            throw new IllegalArgumentException("User not found for document upload.");
+        }
+
+        user.setDocumentType(req.getDocumentType());
+        user.setDocumentName(req.getDocumentName());
+        user.setDocumentData(req.getDocumentData());
+        user.setDocumentUploadedAt(LocalDateTime.now());
+        user.setDocumentVerificationStatus("PENDING");
+        user.setDocumentRejectionReason(null);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+
+        // Notify community admin if apartment exists
+        if (savedUser.getApartment() != null) {
+            final Long aptId = savedUser.getApartment().getId();
+            User admin = userRepository.findByApartmentIdAndRole(aptId, "ADMIN")
+                    .or(() -> userRepository.findByApartmentIdAndRole(aptId, "ROLE_ADMIN"))
+                    .orElse(null);
+
+            String flatNo = savedUser.getHousehold() != null ? savedUser.getHousehold().getFlatNo() : "their flat";
+            Alert alert = Alert.builder()
+                    .apartment(savedUser.getApartment())
+                    .household(savedUser.getHousehold())
+                    .user(admin)
+                    .title("Document Verification Submitted — Flat " + flatNo)
+                    .message("Resident " + savedUser.getFullName() + " has uploaded a " + (req.getDocumentType() != null ? req.getDocumentType() : "verification document") + " for review.")
+                    .alertType("DOCUMENT_VERIFICATION_REQUEST")
+                    .severity("MEDIUM")
+                    .isRead(false)
+                    .isResolved(false)
+                    .build();
+            alertRepository.save(alert);
+
+            // Send Email Notification to Community Admin
+            if (admin != null && admin.getEmail() != null) {
+                try {
+                    emailService.sendDocumentVerificationAlertToAdmin(
+                            admin.getEmail(),
+                            admin.getFullName(),
+                            savedUser.getFullName(),
+                            savedUser.getEmail(),
+                            savedUser.getPhone(),
+                            flatNo,
+                            savedUser.getHousehold() != null ? savedUser.getHousehold().getBlockWing() : "Wing A",
+                            req.getDocumentType(),
+                            req.getDocumentName(),
+                            req.getDocumentData(),
+                            savedUser.getApartment().getName()
+                    );
+                    log.info("Dispatched document verification email notification to admin: {}", admin.getEmail());
+                } catch (Exception e) {
+                    log.warn("Failed to dispatch document verification email to admin: {}", e.getMessage());
+                }
+            }
+        }
+
+        log.info("Document uploaded for resident ID={}, Name={}, Type={}", savedUser.getId(), savedUser.getFullName(), req.getDocumentType());
+        return buildUserSummary(savedUser);
+    }
+
+    @Transactional
+    public AuthDto.PendingResidentDto verifyResidentDocument(Long residentId, Long adminCommunityId, String adminName, AuthDto.DocumentVerificationRequest req) {
+        User resident = userRepository.findById(residentId)
+                .orElseThrow(() -> new IllegalArgumentException("Resident not found with ID: " + residentId));
+
+        if (resident.getApartment() == null || !resident.getApartment().getId().equals(adminCommunityId)) {
+            throw new SecurityException("Unauthorized: Resident does not belong to your community.");
+        }
+
+        boolean isApprove = "VERIFIED".equalsIgnoreCase(req.getStatus());
+        resident.setDocumentVerificationStatus(isApprove ? "VERIFIED" : "REJECTED");
+        resident.setDocumentRejectionReason(isApprove ? null : (req.getReason() != null ? req.getReason() : "Declined by Admin"));
+        resident.setVerifiedByAdminName(adminName);
+        resident.setVerifiedAt(LocalDateTime.now());
+        resident.setUpdatedAt(LocalDateTime.now());
+        resident = userRepository.save(resident);
+
+        // Create notification alert for resident
+        Alert alert = Alert.builder()
+                .apartment(resident.getApartment())
+                .household(resident.getHousehold())
+                .user(resident)
+                .title(isApprove ? "Document Verification Approved" : "Document Verification Update Required")
+                .message(isApprove 
+                        ? "Your residence document verification has been verified and approved by " + adminName + "."
+                        : "Your document verification was not accepted. Reason: " + resident.getDocumentRejectionReason() + ". Please re-upload a clear copy.")
+                .alertType(isApprove ? "DOCUMENT_VERIFIED" : "DOCUMENT_REJECTED")
+                .severity(isApprove ? "INFO" : "WARNING")
+                .isRead(false)
+                .isResolved(false)
+                .build();
+        alertRepository.save(alert);
+
+        // Send Email Notification to Resident with Approval / Rejection Result
+        if (resident.getEmail() != null) {
+            try {
+                String flatNo = resident.getHousehold() != null ? resident.getHousehold().getFlatNo() : "N/A";
+                String communityName = resident.getApartment() != null ? resident.getApartment().getName() : "Your Community";
+                emailService.sendDocumentVerificationResultToResident(
+                        resident.getEmail(),
+                        resident.getFullName(),
+                        flatNo,
+                        communityName,
+                        isApprove,
+                        resident.getDocumentRejectionReason()
+                );
+                log.info("Dispatched document verification result email to resident: {}", resident.getEmail());
+            } catch (Exception e) {
+                log.warn("Failed to dispatch document verification email to resident: {}", e.getMessage());
+            }
+        }
+
+        log.info("Document verification updated by admin {} for resident ID={}: Status={}", adminName, resident.getId(), resident.getDocumentVerificationStatus());
+
+        return AuthDto.PendingResidentDto.builder()
+                .id(resident.getId())
+                .fullName(resident.getFullName())
+                .email(resident.getEmail())
+                .phone(resident.getPhone())
+                .flatNo(resident.getHousehold() != null ? resident.getHousehold().getFlatNo() : "N/A")
+                .blockWing(resident.getHousehold() != null ? resident.getHousehold().getBlockWing() : "Wing A")
+                .householdId(resident.getHousehold() != null ? resident.getHousehold().getId() : null)
+                .apartmentId(resident.getApartment() != null ? resident.getApartment().getId() : null)
+                .apartmentName(resident.getApartment() != null ? resident.getApartment().getName() : "")
+                .approvalStatus(resident.getApprovalStatus())
+                .requestedAt(resident.getCreatedAt())
+                .documentType(resident.getDocumentType())
+                .documentName(resident.getDocumentName())
+                .documentData(resident.getDocumentData())
+                .documentUploadedAt(resident.getDocumentUploadedAt())
+                .documentVerificationStatus(resident.getDocumentVerificationStatus())
+                .documentRejectionReason(resident.getDocumentRejectionReason())
                 .build();
     }
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
+  FileCheck,
   Users, 
   Gauge, 
   Receipt, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { InstallButton } from '../pwa/InstallButton';
 
 export const Sidebar = () => {
   const { 
@@ -34,6 +36,7 @@ export const Sidebar = () => {
   // Navigation config for Admin
   const adminNavItems = [
     { id: 'dashboard', path: '/admin/dashboard', label: t('nav.dashboard', 'Dashboard'), icon: LayoutDashboard },
+    { id: 'verification', path: '/admin/verification', label: t('nav.docApprovals', 'Doc Approvals'), icon: FileCheck },
     { id: 'households', path: '/admin/households', label: t('nav.households', 'Households Directory'), icon: Users },
     { id: 'readings', path: '/admin/readings', label: t('nav.readings', 'Meter Readings'), icon: Gauge },
     { id: 'billing', path: '/admin/billing', label: t('nav.billing', 'Billing Management'), icon: Receipt },
@@ -49,6 +52,7 @@ export const Sidebar = () => {
   // Navigation config for Resident
   const residentNavItems = [
     { id: 'dashboard', path: '/resident/dashboard', label: t('nav.dashboard', 'Dashboard'), icon: LayoutDashboard },
+    { id: 'verification', path: '/resident/verification', label: t('nav.docVerification', 'Doc Verification'), icon: FileCheck },
     { id: 'history', path: '/resident/history', label: t('nav.history', 'Usage History'), icon: Droplets },
     { id: 'bills', path: '/resident/bills', label: t('nav.bills', 'My Bills'), icon: Receipt },
     { id: 'reports', path: '/resident/reports', label: t('nav.reports', 'Reports'), icon: BarChart3 },
@@ -153,6 +157,11 @@ export const Sidebar = () => {
               );
             })}
           </nav>
+        </div>
+
+        {/* PWA App Install Promotion */}
+        <div className="px-4 py-2 shrink-0">
+          <InstallButton variant="default" className="w-full justify-center" />
         </div>
 
         {/* Logout button permanently fixed at bottom */}

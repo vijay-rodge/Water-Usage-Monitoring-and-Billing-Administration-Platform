@@ -443,6 +443,65 @@ export const api = {
     }
   },
 
+  // Document Verification APIs
+  uploadVerificationDocument: async ({ userId, documentType, documentName, documentData }) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/upload-verification-document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userId, documentType, documentName, documentData })
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to upload verification document');
+    } catch (e) {
+      if (e.message && !e.message.includes('fetch')) throw e;
+      if (mockState.currentUser) {
+        mockState.currentUser.documentType = documentType;
+        mockState.currentUser.documentName = documentName;
+        mockState.currentUser.documentData = documentData;
+        mockState.currentUser.documentVerificationStatus = 'PENDING';
+        mockState.currentUser.documentUploadedAt = new Date().toISOString();
+        mockState.currentUser.documentRejectionReason = null;
+      }
+      return mockState.currentUser;
+    }
+  },
+
+  verifyResidentDocument: async (residentId, { status, reason, communityId }) => {
+    try {
+      const url = communityId
+        ? `${API_BASE}/auth/verify-document/${residentId}?communityId=${communityId}`
+        : `${API_BASE}/auth/verify-document/${residentId}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ residentId, status, reason })
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to verify resident document');
+    } catch (e) {
+      if (e.message && !e.message.includes('fetch')) throw e;
+      return { success: true, residentId, status, reason };
+    }
+  },
+
+  getCommunityResidentDocuments: async (communityId) => {
+    try {
+      const url = communityId
+        ? `${API_BASE}/auth/resident-documents?communityId=${communityId}`
+        : `${API_BASE}/auth/resident-documents`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('API getCommunityResidentDocuments failed:', e);
+    }
+    return [];
+  },
+
   getCurrentUser: () => mockState.currentUser,
 
   getResidentDashboard: async (householdId = 1) => {
@@ -453,6 +512,24 @@ export const api = {
       if (res.ok) return await res.json();
     } catch (e) {}
     return mockState.residentDashboard;
+  },
+
+  getPersonalizedWaterTips: async (householdId = 1, refresh = false) => {
+    try {
+      const res = await fetch(`${API_BASE}/resident/water-tips?householdId=${householdId}&refresh=${refresh}`, {
+        credentials: 'include'
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('API getPersonalizedWaterTips failed:', e);
+    }
+    try {
+      const altRes = await fetch(`${API_BASE}/dashboard/resident/${householdId}/water-tips?refresh=${refresh}`, {
+        credentials: 'include'
+      });
+      if (altRes.ok) return await altRes.json();
+    } catch (e) {}
+    return null;
   },
 
   getAdminDashboard: async (apartmentId = 1) => {
